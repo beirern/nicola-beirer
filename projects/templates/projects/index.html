@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Projects</title>
+</head>
+<body>
+  <h1>Projects</h1>
+  <a href="/">Home</a>
+
+  {% for project in projects %}
+  <article>
+    <h2>{{ project.title }}</h2>
+    <p>{{ project.description }}</p>
+
+    {% if project.features %}
+    <ul>
+      {% for feature in project.features %}
+      <li>{{ feature }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if project.keywords %}
+    <p>
+      {% for keyword in project.keywords %}
+      <span>{{ keyword }}</span>{% if not forloop.last %}, {% endif %}
+      {% endfor %}
+    </p>
+    {% endif %}
+
+    <p>
+      {% if project.live_url %}<a href="{{ project.live_url }}">Live</a>{% endif %}
+      {% if project.github_url %}<a href="{{ project.github_url }}">GitHub</a>{% endif %}
+      {% if project.blog_post_url %}<a href="{{ project.blog_post_url }}">Blog post</a>{% endif %}
+    </p>
+  </article>
+  {% empty %}
+  <p>No projects yet.</p>
+  {% endfor %}
+</body>
+</html>

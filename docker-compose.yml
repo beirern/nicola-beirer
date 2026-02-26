@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:18-alpine
+    env_file: .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    depends_on:
+      - db
+    env_file: .env
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
