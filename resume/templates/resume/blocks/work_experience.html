@@ -1,0 +1,15 @@
+{% load wagtailcore_tags %}
+<section>
+    <h3>{{ value.role }} — {{ value.company }}{% if value.location %}, {{ value.location }}{% endif %}</h3>
+    <p>{{ value.start_date }} – {{ value.end_date }}</p>
+    {% if value.description %}
+        <div>{{ value.description|richtext }}</div>
+    {% endif %}
+    {% if value.achievements %}
+        <ul>
+            {% for achievement in value.achievements %}
+                <li>{{ achievement }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</section>

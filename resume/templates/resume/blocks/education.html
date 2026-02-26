@@ -1,0 +1,7 @@
+<section>
+    <h3>{{ value.degree }} — {{ value.institution }}{% if value.location %}, {{ value.location }}{% endif %}</h3>
+    <p>{{ value.start_date }} – {{ value.end_date }}</p>
+    {% if value.notes %}
+        <p>{{ value.notes }}</p>
+    {% endif %}
+</section>

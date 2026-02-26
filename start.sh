@@ -16,6 +16,7 @@ done
 echo "PostgreSQL is ready."
 
 echo "Running migrations..."
+docker compose run --rm --build web python manage.py makemigrations
 docker compose run --rm web python manage.py migrate
 
 echo "Starting web server..."

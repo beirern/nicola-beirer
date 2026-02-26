@@ -1,2 +1,4 @@
 django
+wagtail
+Pillow
 psycopg2-binary

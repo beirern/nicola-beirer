@@ -1,0 +1,35 @@
+{% load wagtailcore_tags %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.full_name }} — {{ page.professional_title }}</title>
+</head>
+<body>
+    <header>
+        <h1>{{ page.full_name }}</h1>
+        <p>{{ page.professional_title }}</p>
+        {% if page.bio %}
+            <div>{{ page.bio|richtext }}</div>
+        {% endif %}
+        {% if page.contact_links %}
+            <ul>
+                {% for block in page.contact_links %}
+                    <li>
+                        <a href="{{ block.value.url }}">
+                            {% if block.value.icon_class %}<i class="{{ block.value.icon_class }}"></i> {% endif %}
+                            {{ block.value.label }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </header>
+
+    <main>
+        {% for block in page.body %}
+            {% include_block block %}
+        {% endfor %}
+    </main>
+</body>
+</html>
