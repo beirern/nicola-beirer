@@ -1,0 +1,30 @@
+{% load wagtailcore_tags %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title }}</title>
+</head>
+<body>
+    <header>
+        <h1>{{ page.title }}</h1>
+        {% if page.intro %}
+            <div>{{ page.intro|richtext }}</div>
+        {% endif %}
+    </header>
+
+    <main>
+        {% for post in blog_posts %}
+            <article>
+                <h2><a href="{% pageurl post %}">{{ post.title }}</a></h2>
+                <p>{{ post.date }}</p>
+                {% if post.intro %}
+                    <p>{{ post.intro }}</p>
+                {% endif %}
+            </article>
+        {% empty %}
+            <p>No posts yet.</p>
+        {% endfor %}
+    </main>
+</body>
+</html>
