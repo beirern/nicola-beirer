@@ -4,6 +4,7 @@ from wagtail.fields import RichTextField, StreamField
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail.blocks import (
     CharBlock,
+    EmailBlock,
     ListBlock,
     RichTextBlock,
     StreamBlock,
@@ -14,7 +15,8 @@ from wagtail.blocks import (
 
 class ContactLinkBlock(StructBlock):
     label = CharBlock(help_text="e.g. GitHub, LinkedIn, Email")
-    url = URLBlock()
+    url = URLBlock(required=False, help_text="Use this or Email, not both")
+    email = EmailBlock(required=False, help_text="Use this or URL, not both")
     icon_class = CharBlock(required=False, help_text="Optional CSS icon class")
 
     class Meta:

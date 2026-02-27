@@ -16,10 +16,7 @@
   {% if page.contact_links %}
   <div class="flex flex-wrap gap-4 mt-4 text-sm">
     {% for block in page.contact_links %}
-    <a href="{{ block.value.url }}" class="text-gray-400 hover:text-terminal transition-colors">
-      {% if block.value.icon_class %}<i class="{{ block.value.icon_class }}"></i> {% endif %}
-      {{ block.value.label }}
-    </a>
+    {% include_block block %}
     {% endfor %}
   </div>
   {% endif %}
