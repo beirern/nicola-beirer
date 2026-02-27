@@ -1,13 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Nicola Beirer</title>
-</head>
-<body>
-  <h1>Hello World</h1>
-  <nav>
-    <a href="/projects/">Projects</a>
-  </nav>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Nicola Beirer{% endblock %}
+
+{% block content %}
+<section class="py-16">
+  <p class="text-gray-500 text-sm mb-2">> whoami</p>
+  <h1 class="text-4xl font-bold text-terminal mb-4">Nicola Beirer</h1>
+  <p class="text-gray-400 text-lg">Engineer. Explorer. Builder of things.</p>
+</section>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block title %}{{ page.title }} — Adventures — Nicola Beirer{% endblock %}
+
+{% block content %}
+{% if page.header_image %}
+<div class="-mx-6 mb-10">
+  {% image page.header_image width-1200 as img %}
+  <img src="{{ img.url }}" alt="{{ page.title }}" class="w-full max-h-[480px] object-cover">
+</div>
+{% endif %}
+
+<header class="mb-8">
+  <div class="flex items-center gap-3 mb-3">
+    <span class="text-xs border border-terminal text-terminal px-2 py-0.5 rounded uppercase tracking-wider">
+      {{ page.activity_type }}
+    </span>
+    <span class="text-gray-600 text-xs">{{ page.date }}</span>
+  </div>
+
+  <h1 class="text-3xl font-bold text-gray-100 mb-4">{{ page.title }}</h1>
+
+  {% if page.intro %}
+  <p class="text-gray-400 text-lg mb-6">{{ page.intro }}</p>
+  {% endif %}
+
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 border border-gray-800 rounded p-4 bg-gray-900/50">
+    {% if page.location %}
+    <div>
+      <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">location</p>
+      <p class="text-terminal text-sm font-bold">{{ page.location }}</p>
+    </div>
+    {% endif %}
+    {% if page.distance_km %}
+    <div>
+      <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">distance</p>
+      <p class="text-terminal text-sm font-bold">{{ page.distance_km }} km</p>
+    </div>
+    {% endif %}
+    {% if page.elevation_gain_m %}
+    <div>
+      <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">elevation gain</p>
+      <p class="text-terminal text-sm font-bold">+{{ page.elevation_gain_m }} m</p>
+    </div>
+    {% endif %}
+    <div>
+      <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">date</p>
+      <p class="text-terminal text-sm font-bold">{{ page.date }}</p>
+    </div>
+  </div>
+</header>
+
+{% if page.tags.all %}
+<div class="flex flex-wrap gap-2 mb-8">
+  {% for tag in page.tags.all %}
+  <span class="text-xs border border-gray-700 text-gray-500 px-2 py-0.5 rounded">{{ tag }}</span>
+  {% endfor %}
+</div>
+{% endif %}
+
+<article class="space-y-6 mb-12">
+  {% for block in page.body %}
+  {% include_block block %}
+  {% endfor %}
+</article>
+
+{% if page.waypoints.all %}
+<section class="border-t border-gray-800 pt-8">
+  <h2 class="text-lg font-bold text-terminal mb-4">> waypoints</h2>
+  <div class="space-y-3">
+    {% for waypoint in page.waypoints.all %}
+    <div class="border border-gray-800 rounded p-4">
+      <h3 class="text-gray-100 font-bold mb-1">{{ waypoint.name }}</h3>
+      {% if waypoint.description %}
+      <p class="text-gray-400 text-sm mb-2">{{ waypoint.description }}</p>
+      {% endif %}
+      <p class="text-gray-600 text-xs">
+        <span class="text-terminal">></span> {{ waypoint.latitude }}, {{ waypoint.longitude }}
+      </p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,35 +1,33 @@
-{% load wagtailcore_tags %}<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ page.full_name }} — {{ page.professional_title }}</title>
-</head>
-<body>
-    <header>
-        <h1>{{ page.full_name }}</h1>
-        <p>{{ page.professional_title }}</p>
-        {% if page.bio %}
-            <div>{{ page.bio|richtext }}</div>
-        {% endif %}
-        {% if page.contact_links %}
-            <ul>
-                {% for block in page.contact_links %}
-                    <li>
-                        <a href="{{ block.value.url }}">
-                            {% if block.value.icon_class %}<i class="{{ block.value.icon_class }}"></i> {% endif %}
-                            {{ block.value.label }}
-                        </a>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    </header>
+{% extends "base.html" %}
+{% load wagtailcore_tags %}
 
-    <main>
-        {% for block in page.body %}
-            {% include_block block %}
-        {% endfor %}
-    </main>
-</body>
-</html>
+{% block title %}{{ page.full_name }} — Resume{% endblock %}
+
+{% block content %}
+<header class="mb-10">
+  <p class="text-gray-500 text-sm mb-2">> cat ./resume.md</p>
+  <h1 class="text-3xl font-bold text-terminal mb-1">{{ page.full_name }}</h1>
+  <p class="text-gray-400 text-lg">{{ page.professional_title }}</p>
+
+  {% if page.bio %}
+  <div class="text-gray-400 mt-4 leading-relaxed">{{ page.bio|richtext }}</div>
+  {% endif %}
+
+  {% if page.contact_links %}
+  <div class="flex flex-wrap gap-4 mt-4 text-sm">
+    {% for block in page.contact_links %}
+    <a href="{{ block.value.url }}" class="text-gray-400 hover:text-terminal transition-colors">
+      {% if block.value.icon_class %}<i class="{{ block.value.icon_class }}"></i> {% endif %}
+      {{ block.value.label }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</header>
+
+<div class="space-y-6">
+  {% for block in page.body %}
+  {% include_block block %}
+  {% endfor %}
+</div>
+{% endblock %}

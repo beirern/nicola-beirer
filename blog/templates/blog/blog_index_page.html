@@ -1,30 +1,30 @@
-{% load wagtailcore_tags %}<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ page.title }}</title>
-</head>
-<body>
-    <header>
-        <h1>{{ page.title }}</h1>
-        {% if page.intro %}
-            <div>{{ page.intro|richtext }}</div>
-        {% endif %}
-    </header>
+{% extends "base.html" %}
+{% load wagtailcore_tags %}
 
-    <main>
-        {% for post in blog_posts %}
-            <article>
-                <h2><a href="{% pageurl post %}">{{ post.title }}</a></h2>
-                <p>{{ post.date }}</p>
-                {% if post.intro %}
-                    <p>{{ post.intro }}</p>
-                {% endif %}
-            </article>
-        {% empty %}
-            <p>No posts yet.</p>
-        {% endfor %}
-    </main>
-</body>
-</html>
+{% block title %}{{ page.title }} — Nicola Beirer{% endblock %}
+
+{% block content %}
+<header class="mb-10">
+  <p class="text-gray-500 text-sm mb-2">> cat ./blog/index</p>
+  <h1 class="text-3xl font-bold text-terminal mb-4">{{ page.title }}</h1>
+  {% if page.intro %}
+  <div class="text-gray-400">{{ page.intro|richtext }}</div>
+  {% endif %}
+</header>
+
+<div class="space-y-6">
+  {% for post in blog_posts %}
+  <article class="border border-gray-800 rounded p-6 hover:border-gray-700 transition-colors">
+    <p class="text-gray-600 text-xs mb-1">{{ post.date }}</p>
+    <h2 class="text-lg font-bold text-gray-100 mb-2">
+      <a href="{% pageurl post %}" class="hover:text-terminal transition-colors">{{ post.title }}</a>
+    </h2>
+    {% if post.intro %}
+    <p class="text-gray-400 text-sm">{{ post.intro }}</p>
+    {% endif %}
+  </article>
+  {% empty %}
+  <p class="text-gray-500">No posts yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

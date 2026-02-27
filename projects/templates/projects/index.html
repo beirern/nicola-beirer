@@ -1,42 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Projects</title>
-</head>
-<body>
-  <h1>Projects</h1>
-  <a href="/">Home</a>
+{% extends "base.html" %}
 
+{% block title %}Projects — Nicola Beirer{% endblock %}
+
+{% block content %}
+<header class="mb-10">
+  <p class="text-gray-500 text-sm mb-2">> ls ./projects</p>
+  <h1 class="text-3xl font-bold text-terminal">Projects</h1>
+</header>
+
+<div class="space-y-8">
   {% for project in projects %}
-  <article>
-    <h2>{{ project.title }}</h2>
-    <p>{{ project.description }}</p>
+  <article class="border border-gray-800 rounded p-6 hover:border-gray-700 transition-colors">
+    <h2 class="text-xl font-bold text-gray-100 mb-2">{{ project.title }}</h2>
+    <p class="text-gray-400 mb-4">{{ project.description }}</p>
 
     {% if project.features %}
-    <ul>
+    <ul class="list-none space-y-1 mb-4">
       {% for feature in project.features %}
-      <li>{{ feature }}</li>
+      <li class="text-gray-500 text-sm"><span class="text-terminal mr-2">></span>{{ feature }}</li>
       {% endfor %}
     </ul>
     {% endif %}
 
     {% if project.keywords %}
-    <p>
+    <div class="flex flex-wrap gap-2 mb-4">
       {% for keyword in project.keywords %}
-      <span>{{ keyword }}</span>{% if not forloop.last %}, {% endif %}
+      <span class="text-xs border border-terminal text-terminal px-2 py-0.5 rounded">{{ keyword }}</span>
       {% endfor %}
-    </p>
+    </div>
     {% endif %}
 
-    <p>
-      {% if project.live_url %}<a href="{{ project.live_url }}">Live</a>{% endif %}
-      {% if project.github_url %}<a href="{{ project.github_url }}">GitHub</a>{% endif %}
-      {% if project.blog_post_url %}<a href="{{ project.blog_post_url }}">Blog post</a>{% endif %}
-    </p>
+    <div class="flex gap-4 text-sm">
+      {% if project.live_url %}<a href="{{ project.live_url }}" class="text-terminal hover:underline">live ↗</a>{% endif %}
+      {% if project.github_url %}<a href="{{ project.github_url }}" class="text-gray-400 hover:text-terminal">github ↗</a>{% endif %}
+      {% if project.blog_post_url %}<a href="{{ project.blog_post_url }}" class="text-gray-400 hover:text-terminal">blog post ↗</a>{% endif %}
+    </div>
   </article>
   {% empty %}
-  <p>No projects yet.</p>
+  <p class="text-gray-500">No projects yet.</p>
   {% endfor %}
-</body>
-</html>
+</div>
+{% endblock %}

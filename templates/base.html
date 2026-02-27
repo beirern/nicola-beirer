@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Nicola Beirer{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            terminal: '#00ff41',
+            dark: '#0d1117',
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-dark text-gray-200 font-mono min-h-screen">
+
+  <nav class="border-b border-gray-800 px-6 py-4">
+    <div class="max-w-4xl mx-auto flex items-center gap-8">
+      <a href="/" class="text-terminal font-bold text-sm shrink-0">nicola@life:~$</a>
+      <div class="flex gap-6 text-sm">
+        <a href="/projects/"
+           class="transition-colors {% if '/projects/' in request.path %}text-terminal{% else %}text-gray-400 hover:text-terminal{% endif %}">
+          projects
+        </a>
+        <a href="/adventures/"
+           class="transition-colors {% if '/adventures/' in request.path %}text-terminal{% else %}text-gray-400 hover:text-terminal{% endif %}">
+          adventures
+        </a>
+        <a href="/blog/"
+           class="transition-colors {% if '/blog/' in request.path %}text-terminal{% else %}text-gray-400 hover:text-terminal{% endif %}">
+          blog
+        </a>
+        <a href="/resume/"
+           class="transition-colors {% if '/resume/' in request.path %}text-terminal{% else %}text-gray-400 hover:text-terminal{% endif %}">
+          resume
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-4xl mx-auto px-6 py-10">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

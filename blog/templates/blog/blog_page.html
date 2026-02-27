@@ -1,34 +1,34 @@
-{% load wagtailcore_tags wagtailimages_tags %}<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ page.title }}</title>
-</head>
-<body>
-    <header>
-        {% if page.header_image %}
-            {% image page.header_image width-1200 as img %}
-            <img src="{{ img.url }}" alt="{{ page.title }}">
-        {% endif %}
-        <h1>{{ page.title }}</h1>
-        <p>{{ page.date }}</p>
-        {% if page.tags.all %}
-            <ul>
-                {% for tag in page.tags.all %}
-                    <li>{{ tag }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-        {% if page.intro %}
-            <p>{{ page.intro }}</p>
-        {% endif %}
-    </header>
+{% extends "base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
 
-    <main>
-        {% for block in page.body %}
-            {% include_block block %}
-        {% endfor %}
-    </main>
-</body>
-</html>
+{% block title %}{{ page.title }} — Nicola Beirer{% endblock %}
+
+{% block content %}
+{% if page.header_image %}
+<div class="-mx-6 mb-10">
+  {% image page.header_image width-1200 as img %}
+  <img src="{{ img.url }}" alt="{{ page.title }}" class="w-full max-h-96 object-cover">
+</div>
+{% endif %}
+
+<header class="mb-10">
+  <p class="text-gray-600 text-xs mb-2">{{ page.date }}</p>
+  <h1 class="text-3xl font-bold text-gray-100 mb-4">{{ page.title }}</h1>
+  {% if page.intro %}
+  <p class="text-gray-400 text-lg">{{ page.intro }}</p>
+  {% endif %}
+  {% if page.tags.all %}
+  <div class="flex flex-wrap gap-2 mt-4">
+    {% for tag in page.tags.all %}
+    <span class="text-xs border border-gray-700 text-gray-500 px-2 py-0.5 rounded">{{ tag }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+</header>
+
+<article class="prose prose-invert max-w-none">
+  {% for block in page.body %}
+  {% include_block block %}
+  {% endfor %}
+</article>
+{% endblock %}
