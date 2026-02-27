@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}404 — Page Not Found | Nicola Beirer{% endblock %}
+
+{% block extra_css %}
+<style>
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  .cursor {
+    display: inline-block;
+    width: 0.6ch;
+    height: 1.1em;
+    background-color: #00ff41;
+    vertical-align: text-bottom;
+    animation: blink 1s step-start infinite;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-16">
+  <p class="text-gray-500 text-sm mb-6">> cd {{ request.path }}</p>
+
+  <div class="mb-8">
+    <span class="text-terminal text-7xl font-bold">404</span>
+  </div>
+
+  <p class="text-gray-400 text-sm mb-1">bash: <span class="text-gray-200">{{ request.path }}</span>: No such file or directory</p>
+  <p class="text-gray-600 text-sm mb-10">exit code 127</p>
+
+  <p class="text-gray-500 text-sm mb-2">> ls ./</p>
+  <div class="flex flex-wrap gap-3 text-sm mb-10">
+    <a href="/" class="border border-gray-800 rounded px-4 py-2 text-gray-400 hover:text-terminal hover:border-terminal transition-colors">
+      ~/
+    </a>
+    <a href="/projects/" class="border border-gray-800 rounded px-4 py-2 text-gray-400 hover:text-terminal hover:border-terminal transition-colors">
+      projects/
+    </a>
+    <a href="/adventures/" class="border border-gray-800 rounded px-4 py-2 text-gray-400 hover:text-terminal hover:border-terminal transition-colors">
+      adventures/
+    </a>
+    <a href="/blog/" class="border border-gray-800 rounded px-4 py-2 text-gray-400 hover:text-terminal hover:border-terminal transition-colors">
+      blog/
+    </a>
+    <a href="/resume/" class="border border-gray-800 rounded px-4 py-2 text-gray-400 hover:text-terminal hover:border-terminal transition-colors">
+      resume/
+    </a>
+  </div>
+
+  <p class="text-gray-600 text-sm">nicola@life:~$ <span class="cursor"></span></p>
+</section>
+{% endblock %}
