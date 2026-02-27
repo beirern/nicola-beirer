@@ -72,7 +72,7 @@ jobs:
               | docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
             # Write .env from GitHub environment secrets
-            cat > ~/flight-logbook/.env << 'ENVEOF'
+            cat > ~/nicola-beirer/.env << 'ENVEOF'
             SECRET_KEY=${{ secrets.SECRET_KEY }}
             DEBUG=${{ secrets.DEBUG }}
             ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
@@ -88,7 +88,7 @@ jobs:
             AWS_S3_REGION_NAME=${{ secrets.AWS_REGION }}
             ENVEOF
 
-            cd ~/flight-logbook
+            cd ~/nicola-beirer
 
             # Construct image URI from known values — avoids cross-job secret masking
             export IMAGE="${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}"
