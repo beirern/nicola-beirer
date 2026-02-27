@@ -1,1 +1,7 @@
-<{{ value.level }}>{{ value.text }}</{{ value.level }}>
+{% if value.level == 'h2' %}
+<h2 class="text-2xl font-bold text-terminal mt-10 mb-3 border-b border-gray-800 pb-2">{{ value.text }}</h2>
+{% elif value.level == 'h3' %}
+<h3 class="text-xl font-semibold text-gray-100 mt-8 mb-2">{{ value.text }}</h3>
+{% else %}
+<h4 class="text-lg font-medium text-gray-300 mt-6 mb-2">{{ value.text }}</h4>
+{% endif %}

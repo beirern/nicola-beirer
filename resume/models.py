@@ -67,6 +67,7 @@ class CertificationBlock(StructBlock):
     url = URLBlock(required=False)
 
     class Meta:
+        template = 'resume/blocks/certification.html'
         icon = 'certificate'
 
 

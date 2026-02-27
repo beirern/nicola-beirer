@@ -1,8 +1,8 @@
 <section>
-    <h4>{{ value.group_name }}</h4>
-    <ul>
-        {% for skill in value.skills %}
-            <li>{{ skill }}</li>
-        {% endfor %}
-    </ul>
+  <h4 class="text-sm text-gray-500 uppercase tracking-widest mb-3">{{ value.group_name }}</h4>
+  <div class="flex flex-wrap gap-2">
+    {% for skill in value.skills %}
+    <span class="text-xs border border-gray-700 text-gray-300 px-3 py-1 rounded-full hover:border-terminal hover:text-terminal transition-colors">{{ skill }}</span>
+    {% endfor %}
+  </div>
 </section>

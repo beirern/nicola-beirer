@@ -1,7 +1,10 @@
-<section>
-    <h3>{{ value.degree }} — {{ value.institution }}{% if value.location %}, {{ value.location }}{% endif %}</h3>
-    <p>{{ value.start_date }} – {{ value.end_date }}</p>
-    {% if value.notes %}
-        <p>{{ value.notes }}</p>
-    {% endif %}
+<section class="border border-gray-800 rounded p-5 bg-gray-900/20">
+  <div class="flex flex-wrap items-start justify-between gap-2 mb-1">
+    <h3 class="text-lg font-semibold text-terminal">{{ value.degree }}</h3>
+    <span class="text-xs text-gray-500 shrink-0">{{ value.start_date }} – {{ value.end_date }}</span>
+  </div>
+  <p class="text-gray-400 text-sm">{{ value.institution }}{% if value.location %} · {{ value.location }}{% endif %}</p>
+  {% if value.notes %}
+  <p class="text-gray-500 text-sm mt-2 italic">{{ value.notes }}</p>
+  {% endif %}
 </section>

@@ -1,1 +1,7 @@
-<pre><code class="language-{{ value.language }}">{{ value.code }}</code></pre>
+<div class="my-4 rounded border border-gray-700 overflow-hidden">
+  <div class="bg-gray-900 px-4 py-1.5 text-xs text-gray-500 border-b border-gray-700 flex items-center gap-2">
+    <span class="text-terminal">$</span>
+    <span>{{ value.language }}</span>
+  </div>
+  <pre class="bg-gray-950 p-4 overflow-x-auto text-sm leading-relaxed m-0"><code class="language-{{ value.language }}">{{ value.code }}</code></pre>
+</div>

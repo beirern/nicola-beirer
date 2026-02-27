@@ -3,6 +3,33 @@
 
 {% block title %}{{ page.title }} — Nicola Beirer{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* Richtext-generated HTML styling */
+  .richtext-content p { margin-bottom: 1rem; }
+  .richtext-content ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+  .richtext-content ol { list-style: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
+  .richtext-content li { margin-bottom: 0.25rem; }
+  .richtext-content strong { color: #e5e7eb; font-weight: 600; }
+  .richtext-content em { font-style: italic; color: #9ca3af; }
+  .richtext-content a { color: #00ff41; text-decoration: underline; }
+  .richtext-content blockquote { border-left: 4px solid #00ff41; padding-left: 1rem; color: #9ca3af; font-style: italic; }
+
+  /* Responsive video iframes */
+  .video-container iframe {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: none;
+  }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+{% endblock %}
+
 {% block content %}
 {% if page.header_image %}
 <div class="-mx-6 mb-10">
@@ -26,7 +53,7 @@
   {% endif %}
 </header>
 
-<article class="prose prose-invert max-w-none">
+<article class="space-y-6">
   {% for block in page.body %}
   {% include_block block %}
   {% endfor %}
