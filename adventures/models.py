@@ -52,7 +52,7 @@ class AdventureIndexPage(Page):
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        context['adventure_posts'] = AdventurePage.objects.child_of(self).live().order_by('-date')
+        context['adventure_posts'] = AdventurePage.objects.child_of(self).live().order_by('-date_start')
         return context
 
     class Meta:
@@ -70,7 +70,8 @@ class AdventurePage(Page):
         SAILING = 'sailing', 'Sailing'
         OTHER = 'other', 'Other'
 
-    date = models.DateField(default=datetime.date.today)
+    date_start = models.DateField(default=datetime.date.today)
+    date_end = models.DateField(null=True, blank=True)
     intro = models.CharField(max_length=500, blank=True)
     header_image = models.ForeignKey(
         'wagtailimages.Image',
@@ -103,9 +104,21 @@ class AdventurePage(Page):
     ], blank=True, use_json_field=True)
     tags = ClusterTaggableManager(through=AdventurePageTag, blank=True)
 
+    @property
+    def date_display(self):
+        start = self.date_start
+        end = self.date_end
+        if not end or end == start:
+            return start.strftime('%b %-d, %Y')
+        if start.year == end.year and start.month == end.month:
+            return f"{start.strftime('%b %-d')}–{end.strftime('%-d, %Y')}"
+        if start.year == end.year:
+            return f"{start.strftime('%b %-d')} – {end.strftime('%b %-d, %Y')}"
+        return f"{start.strftime('%b %-d, %Y')} – {end.strftime('%b %-d, %Y')}"
+
     content_panels = Page.content_panels + [
         MultiFieldPanel(
-            [FieldPanel('date'), FieldPanel('tags'), FieldPanel('activity_type')],
+            [FieldPanel('date_start'), FieldPanel('date_end'), FieldPanel('tags'), FieldPanel('activity_type')],
             heading='Post Metadata',
         ),
         MultiFieldPanel(
@@ -124,4 +137,4 @@ class AdventurePage(Page):
 
     class Meta:
         verbose_name = 'Adventure Post'
-        ordering = ['-date']
+        ordering = ['-date_start']
