@@ -6,9 +6,7 @@ class ResumeProject(models.Model):
     description = models.TextField()
     features = models.JSONField(default=list)
     keywords = models.JSONField(default=list)
-    live_url = models.URLField(blank=True)
-    github_url = models.URLField(blank=True)
-    blog_post_url = models.URLField(blank=True)
+    links = models.JSONField(default=list, help_text='List of {"label": "...", "url": "..."} objects')
 
     class Meta:
         ordering = ['title']

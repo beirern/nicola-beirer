@@ -4,5 +4,5 @@ from .models import ResumeProject
 
 @admin.register(ResumeProject)
 class ResumeProjectAdmin(admin.ModelAdmin):
-    list_display = ('title', 'live_url', 'github_url')
+    list_display = ('title',)
     search_fields = ('title', 'keywords')
