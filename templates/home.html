@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load wagtailcore_tags %}
 
 {% block title %}Nicola Beirer{% endblock %}
 
@@ -7,5 +8,100 @@
   <p class="text-gray-500 text-sm mb-2">> whoami</p>
   <h1 class="text-4xl font-bold text-terminal mb-4">Nicola Beirer</h1>
   <p class="text-gray-400 text-lg">Engineer. Explorer. Builder of things.</p>
+</section>
+
+<section class="mb-16">
+  <div class="flex items-baseline justify-between mb-6">
+    <p class="text-gray-500 text-sm">> cat ./blog/index | head -3</p>
+    <a href="/blog/" class="text-terminal text-sm hover:underline">view all ↗</a>
+  </div>
+  <div class="space-y-4">
+    {% for post in recent_posts %}
+    <article class="border border-gray-800 rounded p-6 hover:border-gray-700 transition-colors">
+      <p class="text-gray-600 text-xs mb-1">{{ post.date }}</p>
+      <h2 class="text-lg font-bold text-gray-100 mb-2">
+        <a href="{% pageurl post %}" class="hover:text-terminal transition-colors">{{ post.title }}</a>
+      </h2>
+      {% if post.intro %}
+      <p class="text-gray-400 text-sm">{{ post.intro }}</p>
+      {% endif %}
+    </article>
+    {% empty %}
+    <p class="text-gray-500 text-sm">No posts yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="mb-16">
+  <div class="flex items-baseline justify-between mb-6">
+    <p class="text-gray-500 text-sm">> ls ./adventures --sort=date | head -3</p>
+    <a href="/adventures/" class="text-terminal text-sm hover:underline">view all ↗</a>
+  </div>
+  <div class="space-y-4">
+    {% for adventure in recent_adventures %}
+    <article class="border border-gray-800 rounded p-6 hover:border-gray-700 transition-colors">
+      <div class="flex items-center gap-3 mb-3">
+        <span class="text-xs border border-terminal text-terminal px-2 py-0.5 rounded uppercase tracking-wider">
+          {{ adventure.activity_type }}
+        </span>
+        <span class="text-gray-600 text-xs">{{ adventure.date_display }}</span>
+      </div>
+      <h2 class="text-lg font-bold text-gray-100 mb-2">
+        <a href="{% pageurl adventure %}" class="hover:text-terminal transition-colors">{{ adventure.title }}</a>
+      </h2>
+      {% if adventure.intro %}
+      <p class="text-gray-400 text-sm mb-3">{{ adventure.intro }}</p>
+      {% endif %}
+      <div class="flex flex-wrap gap-4 text-sm">
+        {% if adventure.location %}
+        <span class="text-gray-500"><span class="text-terminal">></span> {{ adventure.location }}</span>
+        {% endif %}
+        {% if adventure.effective_distance_km %}
+        <span class="text-gray-500"><span class="text-terminal">></span> {{ adventure.effective_distance_km }} km</span>
+        {% endif %}
+        {% if adventure.effective_elevation_gain_m %}
+        <span class="text-gray-500"><span class="text-terminal">></span> +{{ adventure.effective_elevation_gain_m }} m</span>
+        {% endif %}
+      </div>
+    </article>
+    {% empty %}
+    <p class="text-gray-500 text-sm">No adventures logged yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="mb-16">
+  <div class="flex items-baseline justify-between mb-6">
+    <p class="text-gray-500 text-sm">> ls ./projects | head -3</p>
+    <a href="/projects/" class="text-terminal text-sm hover:underline">view all ↗</a>
+  </div>
+  <div class="space-y-4">
+    {% for project in recent_projects %}
+    <article class="border border-gray-800 rounded p-6 hover:border-gray-700 transition-colors">
+      <h2 class="text-xl font-bold text-gray-100 mb-2">{{ project.title }}</h2>
+      <p class="text-gray-400 mb-4">{{ project.description }}</p>
+      {% if project.keywords %}
+      <div class="flex flex-wrap gap-2 mb-4">
+        {% for keyword in project.keywords %}
+        <span class="text-xs border border-terminal text-terminal px-2 py-0.5 rounded">{{ keyword }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if project.links %}
+      <div class="flex gap-4 text-sm">
+        {% for link in project.links %}
+          {% if forloop.first %}
+          <a href="{{ link.url }}" class="text-terminal hover:underline">{{ link.label }} ↗</a>
+          {% else %}
+          <a href="{{ link.url }}" class="text-gray-400 hover:text-terminal">{{ link.label }} ↗</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </article>
+    {% empty %}
+    <p class="text-gray-500 text-sm">No projects yet.</p>
+    {% endfor %}
+  </div>
 </section>
 {% endblock %}
