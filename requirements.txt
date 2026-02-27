@@ -2,3 +2,5 @@ django
 wagtail
 Pillow
 psycopg2-binary
+boto3
+django-storages[s3]
