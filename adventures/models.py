@@ -43,6 +43,38 @@ class Waypoint(Orderable):
         return self.name
 
 
+class ActivityFile(Orderable):
+    page = ParentalKey(
+        'adventures.AdventurePage',
+        related_name='activity_files',
+        on_delete=models.CASCADE,
+    )
+    file = models.FileField(upload_to='activity_files/')
+    file_type = models.CharField(
+        max_length=3,
+        choices=[('gpx', 'GPX'), ('fit', 'FIT')],
+        editable=False,
+        default='gpx',
+    )
+    parsed_stats = models.JSONField(null=True, blank=True)
+    route_geojson = models.JSONField(null=True, blank=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    panels = [FieldPanel('file')]
+
+    def save(self, *args, **kwargs):
+        if self.file and not self.pk:
+            name = str(self.file)
+            if '.' in name:
+                ext = name.rsplit('.', 1)[-1].lower()
+                if ext in ('fit', 'gpx'):
+                    self.file_type = ext
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return str(self.file)
+
+
 class AdventureIndexPage(Page):
     intro = RichTextField(blank=True)
 
@@ -85,9 +117,16 @@ class AdventurePage(Page):
         default=ActivityType.HIKING,
     )
     location = models.CharField(max_length=255, blank=True)
-    distance_km = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
-    elevation_gain_m = models.IntegerField(null=True, blank=True)
-    gpx_file = models.FileField(upload_to='gpx/', null=True, blank=True)
+    distance_km = models.DecimalField(
+        max_digits=7, decimal_places=2, null=True, blank=True,
+        help_text='Manual override. Leave blank to use value computed from uploaded activity files.',
+    )
+    elevation_gain_m = models.IntegerField(
+        null=True, blank=True,
+        help_text='Manual override. Leave blank to use value computed from uploaded activity files.',
+    )
+    computed_stats = models.JSONField(null=True, blank=True)
+    merged_route_geojson = models.JSONField(null=True, blank=True)
     body = StreamField([
         ('heading', HeadingBlock()),
         ('paragraph', RichTextBlock(
@@ -103,6 +142,18 @@ class AdventurePage(Page):
         )),
     ], blank=True, use_json_field=True)
     tags = ClusterTaggableManager(through=AdventurePageTag, blank=True)
+
+    @property
+    def effective_distance_km(self):
+        if self.distance_km is not None:
+            return self.distance_km
+        return self.computed_stats.get('distance_km') if self.computed_stats else None
+
+    @property
+    def effective_elevation_gain_m(self):
+        if self.elevation_gain_m is not None:
+            return self.elevation_gain_m
+        return self.computed_stats.get('elevation_gain_m') if self.computed_stats else None
 
     @property
     def date_display(self):
@@ -127,7 +178,7 @@ class AdventurePage(Page):
         ),
         FieldPanel('intro'),
         FieldPanel('header_image'),
-        FieldPanel('gpx_file'),
+        InlinePanel('activity_files', label='Activity Files (.fit or .gpx)'),
         InlinePanel('waypoints', label='Waypoints'),
         FieldPanel('body'),
     ]

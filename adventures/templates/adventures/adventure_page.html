@@ -1,7 +1,17 @@
 {% extends "base.html" %}
-{% load wagtailcore_tags wagtailimages_tags %}
+{% load wagtailcore_tags wagtailimages_tags adventure_tags %}
 
 {% block title %}{{ page.title }} — Adventures — Nicola Beirer{% endblock %}
+
+{% block extra_css %}
+{% if page.merged_route_geojson %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  #adventure-map { border-radius: 4px; border: 1px solid #1f2937; }
+  .leaflet-container { background: #0d1117; font-family: inherit; }
+</style>
+{% endif %}
+{% endblock %}
 
 {% block content %}
 {% if page.header_image %}
@@ -32,16 +42,28 @@
       <p class="text-terminal text-sm font-bold">{{ page.location }}</p>
     </div>
     {% endif %}
-    {% if page.distance_km %}
+    {% if page.effective_distance_km %}
     <div>
       <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">distance</p>
-      <p class="text-terminal text-sm font-bold">{{ page.distance_km }} km</p>
+      <p class="text-terminal text-sm font-bold">{{ page.effective_distance_km }} km</p>
     </div>
     {% endif %}
-    {% if page.elevation_gain_m %}
+    {% if page.effective_elevation_gain_m %}
     <div>
       <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">elevation gain</p>
-      <p class="text-terminal text-sm font-bold">+{{ page.elevation_gain_m }} m</p>
+      <p class="text-terminal text-sm font-bold">+{{ page.effective_elevation_gain_m }} m</p>
+    </div>
+    {% endif %}
+    {% if page.computed_stats.moving_time_s %}
+    <div>
+      <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">moving time</p>
+      <p class="text-terminal text-sm font-bold">{{ page.computed_stats.moving_time_s|duration }}</p>
+    </div>
+    {% endif %}
+    {% if page.computed_stats.avg_speed_kmh %}
+    <div>
+      <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">avg speed</p>
+      <p class="text-terminal text-sm font-bold">{{ page.computed_stats.avg_speed_kmh }} km/h</p>
     </div>
     {% endif %}
     <div>
@@ -57,6 +79,15 @@
   <span class="text-xs border border-gray-700 text-gray-500 px-2 py-0.5 rounded">{{ tag }}</span>
   {% endfor %}
 </div>
+{% endif %}
+
+{% if page.merged_route_geojson %}
+<section class="mb-10 space-y-4">
+  <h2 class="text-lg font-bold text-terminal">> route</h2>
+  <div id="adventure-map" style="height:400px;"></div>
+  <canvas id="elevation-chart" style="max-height:180px;"></canvas>
+  {{ page.merged_route_geojson|json_script:"route-data" }}
+</section>
 {% endif %}
 
 <article class="space-y-6 mb-12">
@@ -82,5 +113,101 @@
     {% endfor %}
   </div>
 </section>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if page.merged_route_geojson %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  const geojson = JSON.parse(document.getElementById('route-data').textContent);
+
+  // ── Map ──────────────────────────────────────────────────────────────────
+  const map = L.map('adventure-map');
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 18,
+  }).addTo(map);
+
+  const trackColors = ['#00ff41', '#ff6b35', '#4ecdc4', '#ffe66d', '#a8e6cf'];
+  geojson.features.forEach((f, i) => { f.properties._idx = i; });
+
+  const routeLayer = L.geoJSON(geojson, {
+    style: (feature) => ({
+      color: trackColors[feature.properties._idx % trackColors.length],
+      weight: 3,
+      opacity: 0.85,
+    }),
+  }).addTo(map);
+
+  map.fitBounds(routeLayer.getBounds(), { padding: [20, 20] });
+
+  // ── Elevation chart ──────────────────────────────────────────────────────
+  function haversineKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const phi1 = lat1 * Math.PI / 180, phi2 = lat2 * Math.PI / 180;
+    const dphi = (lat2 - lat1) * Math.PI / 180;
+    const dlambda = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dphi / 2) ** 2 + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dlambda / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+
+  // Sample every Nth point to keep the chart responsive
+  const allCoords = geojson.features.flatMap(f => f.geometry.coordinates);
+  const stride = Math.max(1, Math.floor(allCoords.length / 500));
+  const sampled = allCoords.filter((_, i) => i % stride === 0);
+
+  const labels = ['0.00'];
+  const elevations = [sampled[0][2]];
+  let cumDist = 0;
+  for (let i = 1; i < sampled.length; i++) {
+    const [lon1, lat1] = sampled[i - 1];
+    const [lon2, lat2] = sampled[i];
+    cumDist += haversineKm(lat1, lon1, lat2, lon2) * stride;
+    labels.push(cumDist.toFixed(2));
+    elevations.push(sampled[i][2]);
+  }
+
+  new Chart(document.getElementById('elevation-chart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: elevations,
+        borderColor: '#00ff41',
+        backgroundColor: 'rgba(0,255,65,0.08)',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        fill: true,
+        tension: 0.3,
+      }],
+    },
+    options: {
+      animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => `${items[0].label} km`,
+            label: (item) => `${item.raw} m`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: '#6b7280', maxTicksLimit: 8, font: { family: 'JetBrains Mono, monospace', size: 11 } },
+          grid: { color: '#1f2937' },
+        },
+        y: {
+          ticks: { color: '#6b7280', font: { family: 'JetBrains Mono, monospace', size: 11 } },
+          grid: { color: '#1f2937' },
+        },
+      },
+    },
+  });
+})();
+</script>
 {% endif %}
 {% endblock %}
