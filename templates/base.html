@@ -47,6 +47,36 @@
            class="transition-colors {% if '/resume/' in request.path %}text-terminal{% else %}text-gray-400 hover:text-terminal{% endif %}">
           resume
         </a>
+        <div class="relative group">
+          <button class="text-gray-400 hover:text-terminal transition-colors flex items-center gap-1 cursor-pointer text-sm">
+            flying
+            <span class="text-xs opacity-60">▾</span>
+          </button>
+          <div class="absolute left-0 top-full pt-2 hidden group-hover:block z-50">
+            <div class="bg-dark border border-gray-800 rounded py-1 min-w-[160px]">
+              <a href="https://nicolaflies.com/" target="_blank" rel="noopener noreferrer"
+                 class="block px-4 py-2 text-gray-400 hover:text-terminal hover:bg-gray-900 transition-colors text-sm">
+                dashboard
+              </a>
+              <a href="https://nicolaflies.com/logbook/" target="_blank" rel="noopener noreferrer"
+                 class="block px-4 py-2 text-gray-400 hover:text-terminal hover:bg-gray-900 transition-colors text-sm">
+                logbook
+              </a>
+              <a href="https://nicolaflies.com/routes/" target="_blank" rel="noopener noreferrer"
+                 class="block px-4 py-2 text-gray-400 hover:text-terminal hover:bg-gray-900 transition-colors text-sm">
+                routes
+              </a>
+              <a href="https://nicolaflies.com/people/" target="_blank" rel="noopener noreferrer"
+                 class="block px-4 py-2 text-gray-400 hover:text-terminal hover:bg-gray-900 transition-colors text-sm">
+                people
+              </a>
+              <a href="https://nicolaflies.com/aircraft/" target="_blank" rel="noopener noreferrer"
+                 class="block px-4 py-2 text-gray-400 hover:text-terminal hover:bg-gray-900 transition-colors text-sm">
+                aircraft
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
