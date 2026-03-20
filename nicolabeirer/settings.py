@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "resume",
     "blog",
     "adventures",
+    "gallery",
 ]
 
 MIDDLEWARE = [

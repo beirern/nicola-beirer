@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load wagtailcore_tags %}
+{% load wagtailcore_tags wagtailimages_tags %}
 
 {% block title %}Nicola Beirer{% endblock %}
 
@@ -99,6 +99,33 @@
     </article>
     {% empty %}
     <p class="text-gray-500 text-sm">No adventures logged yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="mb-16">
+  <div class="flex items-baseline justify-between mb-6">
+    <p class="text-gray-500 text-sm">> ls ./gallery --sort=date | head -3</p>
+    <a href="/gallery/" class="text-terminal text-sm hover:underline">view all ↗</a>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    {% for album in recent_albums %}
+    <a href="{% pageurl album %}" class="block border border-gray-800 rounded overflow-hidden hover:border-gray-700 transition-colors group">
+      {% if album.cover_image %}
+      {% image album.cover_image fill-400x300 as cover %}
+      <img src="{{ cover.url }}" alt="{{ album.title }}" class="w-full h-40 object-cover">
+      {% else %}
+      <div class="w-full h-40 bg-gray-900 flex items-center justify-center">
+        <span class="text-gray-700 text-sm">no cover</span>
+      </div>
+      {% endif %}
+      <div class="p-3">
+        <h2 class="text-sm font-bold text-gray-100 group-hover:text-terminal transition-colors mb-1">{{ album.title }}</h2>
+        <p class="text-xs text-gray-500">{{ album.date|date:"M Y" }} &middot; {{ album.photo_count }} photo{{ album.photo_count|pluralize }}</p>
+      </div>
+    </a>
+    {% empty %}
+    <p class="text-gray-500 text-sm">No albums yet.</p>
     {% endfor %}
   </div>
 </section>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load wagtailcore_tags wagtailimages_tags adventure_tags %}
+{% load wagtailcore_tags wagtailimages_tags adventure_tags gallery_tags %}
 
 {% block title %}{{ page.title }} — Adventures — Nicola Beirer{% endblock %}
 
@@ -112,6 +112,40 @@
     </div>
     {% endfor %}
   </div>
+</section>
+{% endif %}
+
+{% get_adventure_gallery page as gallery_albums %}
+{% get_adventure_photos page as gallery_photos %}
+{% if gallery_albums or gallery_photos %}
+<section class="border-t border-gray-800 pt-8 mt-8">
+  <h2 class="text-lg font-bold text-terminal mb-4">> gallery</h2>
+  {% if gallery_albums %}
+  <div class="space-y-3 mb-6">
+    {% for album in gallery_albums %}
+    <a href="{% pageurl album %}" class="flex items-center gap-4 border border-gray-800 rounded p-4 hover:border-gray-700 transition-colors">
+      {% if album.cover_image %}
+      {% image album.cover_image fill-80x80 as thumb %}
+      <img src="{{ thumb.url }}" alt="{{ album.title }}" class="w-16 h-16 object-cover rounded">
+      {% endif %}
+      <div>
+        <h3 class="text-gray-100 font-bold">{{ album.title }}</h3>
+        <p class="text-gray-500 text-xs">{{ album.date|date:"M j, Y" }} &middot; {{ album.photo_count }} photo{{ album.photo_count|pluralize }}</p>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if gallery_photos %}
+  <div class="grid grid-cols-3 md:grid-cols-4 gap-2">
+    {% for photo in gallery_photos %}
+    {% image photo.image fill-200x200 as thumb %}
+    <a href="{% pageurl photo.page %}" class="aspect-square overflow-hidden rounded border border-gray-800 hover:border-terminal transition-colors">
+      <img src="{{ thumb.url }}" alt="{{ photo.caption }}" class="w-full h-full object-cover" loading="lazy">
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
 </section>
 {% endif %}
 {% endblock %}
