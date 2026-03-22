@@ -63,14 +63,6 @@ class GalleryAlbumPage(Page):
         ordering = ['-date']
 
 
-class PhotoSource(models.TextChoices):
-    FACEBOOK = 'facebook', 'Facebook'
-    INSTAGRAM = 'instagram', 'Instagram'
-    CAMERA = 'camera', 'Camera'
-    PHONE = 'phone', 'Phone'
-    OTHER = 'other', 'Other'
-
-
 class GalleryPhoto(Orderable):
     page = ParentalKey(
         'gallery.GalleryAlbumPage',
@@ -85,11 +77,6 @@ class GalleryPhoto(Orderable):
     caption = models.CharField(max_length=500, blank=True)
     date_taken = models.DateTimeField(null=True, blank=True)
     location = models.CharField(max_length=255, blank=True)
-    source = models.CharField(
-        max_length=20,
-        choices=PhotoSource.choices,
-        default=PhotoSource.OTHER,
-    )
     adventure_page = models.ForeignKey(
         'adventures.AdventurePage',
         null=True, blank=True,
@@ -102,7 +89,6 @@ class GalleryPhoto(Orderable):
         FieldPanel('caption'),
         FieldPanel('date_taken'),
         FieldPanel('location'),
-        FieldPanel('source'),
         FieldPanel('adventure_page'),
     ]
 
