@@ -289,7 +289,7 @@ class Command(BaseCommand):
                 _, created = GalleryPhoto.objects.get_or_create(
                     page=album,
                     image=image,
-                    defaults={"caption": caption, "date_taken": date_taken},
+                    defaults={"caption": caption[:500], "date_taken": date_taken},
                 )
 
                 imported_count += 1
