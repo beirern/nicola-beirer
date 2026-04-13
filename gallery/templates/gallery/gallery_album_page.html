@@ -25,12 +25,11 @@
 
 <section>
   <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="photo-grid">
-    {% for photo in page.photos.all %}
+    {% for photo in photos %}
     {% image photo.image fill-400x400 as thumb %}
-    {% image photo.image width-1600 as full %}
     <div class="bg-gray-900 border border-gray-800 hover:border-terminal hover:shadow-[0_0_10px_rgba(0,255,65,0.3)] transition-all cursor-pointer rounded"
          data-index="{{ forloop.counter0 }}"
-         data-full-url="{{ full.url }}"
+         data-full-url="{{ photo.image.file.url }}"
          data-caption="{{ photo.caption }}"
          data-location="{{ photo.location }}"
          data-adventure-url="{% if photo.adventure_page %}{% pageurl photo.adventure_page %}{% endif %}"

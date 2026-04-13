@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Count
 from modelcluster.fields import ParentalKey
 from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.fields import RichTextField
@@ -18,6 +19,8 @@ class GalleryIndexPage(Page):
             GalleryAlbumPage.objects.child_of(self)
             .live()
             .order_by('-date')
+            .select_related('cover_image', 'adventure_page')
+            .annotate(photo_count=Count('photos'))
         )
         return context
 
@@ -57,6 +60,14 @@ class GalleryAlbumPage(Page):
     @property
     def photo_count(self):
         return self.photos.count()
+
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        context['photos'] = (
+            self.photos.all()
+            .select_related('image', 'adventure_page')
+        )
+        return context
 
     class Meta:
         verbose_name = 'Gallery Album'
