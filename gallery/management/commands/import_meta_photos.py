@@ -2,8 +2,9 @@
 Import Instagram exports into the Gallery app.
 
 Reads two extracted Instagram archives (personal + travel accounts) and
-creates one GalleryAlbumPage per year, uploading each image to Wagtail's
-image library (and therefore to S3 when AWS_STORAGE_BUCKET_NAME is set).
+creates one GalleryAlbumPage per year, uploading each image from posts/
+to Wagtail's image library (and therefore to S3 when AWS_STORAGE_BUCKET_NAME is set).
+Stories are excluded.
 
 Usage:
     python manage.py import_meta_photos --exports-dir /path/to/meta-exports
@@ -95,22 +96,6 @@ def _collect_items(account_root: Path):
                     continue
                 items.append({"path": file_path, "caption": caption, "timestamp": ts})
 
-    # --- stories ---
-    stories_json = meta_dir / "stories.json"
-    if stories_json.exists():
-        with open(stories_json) as f:
-            data = json.load(f)
-        story_list = data.get("ig_stories", data) if isinstance(data, dict) else data
-        for story in story_list:
-            uri = story.get("uri", "")
-            ts = story.get("creation_timestamp", 0)
-            caption = _fix_encoding(story.get("title") or "")
-            file_path = account_root / uri
-            if not file_path.exists():
-                continue
-            if file_path.suffix.lower() not in IMAGE_EXTENSIONS:
-                continue
-            items.append({"path": file_path, "caption": caption, "timestamp": ts})
 
     return items
 
