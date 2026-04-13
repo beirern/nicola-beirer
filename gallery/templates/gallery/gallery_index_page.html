@@ -29,7 +29,7 @@
         <div class="flex items-center gap-3 text-sm text-gray-500">
           <span>{{ album.date|date:"M Y" }}</span>
           <span>&middot;</span>
-          <span>{{ album.photo_count }} photo{{ album.photo_count|pluralize }}</span>
+          <span>{{ album.num_photos }} photo{{ album.num_photos|pluralize }}</span>
         </div>
         {% if album.adventure_page %}
         <span class="inline-block mt-2 text-xs border border-terminal text-terminal px-2 py-0.5 rounded uppercase tracking-wider">

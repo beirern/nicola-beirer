@@ -19,8 +19,8 @@ class GalleryIndexPage(Page):
             GalleryAlbumPage.objects.child_of(self)
             .live()
             .order_by('-date')
-            .select_related('cover_image', 'adventure_page')
-            .annotate(photo_count=Count('photos'))
+            .select_related('cover_image')
+            .annotate(num_photos=Count('photos'))
         )
         return context
 
