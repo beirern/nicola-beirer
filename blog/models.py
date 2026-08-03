@@ -101,6 +101,13 @@ class BlogPage(Page):
         on_delete=models.SET_NULL,
         related_name="+",
     )
+    github_url = models.URLField(blank=True, help_text="Link to the project's GitHub repo")
+    site_url = models.URLField(blank=True, help_text="Link to the project's live site")
+    site_label = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Text shown for the site link, e.g. 'Update on aviationdocs.net'",
+    )
     body = StreamField(
         [
             ("heading", HeadingBlock()),
@@ -135,6 +142,10 @@ class BlogPage(Page):
         ),
         FieldPanel("intro"),
         FieldPanel("header_image"),
+        MultiFieldPanel(
+            [FieldPanel("github_url"), FieldPanel("site_label"), FieldPanel("site_url")],
+            heading="Related Project Links",
+        ),
         FieldPanel("body"),
     ]
 
