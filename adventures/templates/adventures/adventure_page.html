@@ -153,9 +153,10 @@
 
   // ── Map ──────────────────────────────────────────────────────────────────
   const map = L.map('adventure-map');
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
-    maxZoom: 18,
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap contributors © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 20,
   }).addTo(map);
 
   const trackColors = ['#a8532e', '#57683f', '#3f5a76', '#7d5a35', '#8a5a3c'];
