@@ -5,26 +5,25 @@
 
 {% block content %}
 <header class="mb-10">
-  <p class="text-gray-500 text-sm mb-2">> cat ./blog/index</p>
-  <h1 class="text-3xl font-bold text-terminal mb-4">{{ page.title }}</h1>
+  <h1 class="font-serif text-3xl font-semibold mb-4">{{ page.title }}</h1>
   {% if page.intro %}
-  <div class="text-gray-400">{{ page.intro|richtext }}</div>
+  <div class="text-[#4a4033]">{{ page.intro|richtext }}</div>
   {% endif %}
 </header>
 
-<div class="space-y-6">
+<div class="flex flex-col">
   {% for post in blog_posts %}
-  <article class="border border-gray-800 rounded p-6 hover:border-gray-700 transition-colors">
-    <p class="text-gray-600 text-xs mb-1">{{ post.date }}</p>
-    <h2 class="text-lg font-bold text-gray-100 mb-2">
-      <a href="{% pageurl post %}" class="hover:text-terminal transition-colors">{{ post.title }}</a>
+  <article class="border-t border-[#e3d5bc] py-6">
+    <p class="text-[#8a7a5f] text-xs mb-1">{{ post.date }}</p>
+    <h2 class="font-serif text-lg font-semibold mb-2">
+      <a href="{% pageurl post %}" class="hover:text-accent transition-colors">{{ post.title }}</a>
     </h2>
     {% if post.intro %}
-    <p class="text-gray-400 text-sm">{{ post.intro }}</p>
+    <p class="text-[#4a4033] text-sm">{{ post.intro }}</p>
     {% endif %}
   </article>
   {% empty %}
-  <p class="text-gray-500">No posts yet.</p>
+  <p class="text-[#8a7a5f]">No posts yet.</p>
   {% endfor %}
 </div>
 {% endblock %}

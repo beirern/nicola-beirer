@@ -1,22 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" class="bg-dark">
+<html lang="en" class="bg-cream">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Nicola Beirer{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,400&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            terminal: '#00ff41',
-            dark: '#0d1117',
+            cream: '#f8f1e4',
+            ink: '#2b241d',
+            accent: '#a8532e',
           },
           fontFamily: {
-            mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
+            serif: ['"Lora"', 'Georgia', 'serif'],
+            sans: ['"Source Sans 3"', 'system-ui', 'sans-serif'],
           }
         }
       }
@@ -25,34 +27,34 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-dark text-gray-200 font-mono min-h-screen">
+<body class="bg-cream text-ink font-sans min-h-screen">
 
-  <nav class="border-b border-gray-800 px-6 py-4">
+  <nav class="border-b border-[#e3d5bc] px-6 py-4">
     <div class="max-w-4xl mx-auto flex items-center gap-8">
-      <a href="/" class="text-terminal font-bold text-sm shrink-0">nicola@life:~$</a>
+      <a href="/" class="font-serif font-semibold text-[17px] shrink-0">Nicola Beirer</a>
       <div class="flex gap-6 text-sm">
-        <a href="/projects/"
-           class="transition-colors {% if '/projects/' in request.path %}text-terminal{% else %}text-gray-400 hover:text-terminal{% endif %}">
-          projects
+        <a href="/blog/"
+           class="transition-colors {% if '/blog/' in request.path %}text-ink{% else %}text-[#6b5d47] hover:text-accent{% endif %}">
+          blog
         </a>
         <a href="/adventures/"
-           class="transition-colors {% if '/adventures/' in request.path %}text-terminal{% else %}text-gray-400 hover:text-terminal{% endif %}">
+           class="transition-colors {% if '/adventures/' in request.path %}text-ink{% else %}text-[#6b5d47] hover:text-accent{% endif %}">
           adventures
         </a>
         <a href="/gallery/"
-           class="transition-colors {% if '/gallery/' in request.path %}text-terminal{% else %}text-gray-400 hover:text-terminal{% endif %}">
+           class="transition-colors {% if '/gallery/' in request.path %}text-ink{% else %}text-[#6b5d47] hover:text-accent{% endif %}">
           gallery
         </a>
-        <a href="/blog/"
-           class="transition-colors {% if '/blog/' in request.path %}text-terminal{% else %}text-gray-400 hover:text-terminal{% endif %}">
-          blog
+        <a href="/projects/"
+           class="transition-colors {% if '/projects/' in request.path %}text-ink{% else %}text-[#6b5d47] hover:text-accent{% endif %}">
+          projects
         </a>
         <a href="/resume/"
-           class="transition-colors {% if '/resume/' in request.path %}text-terminal{% else %}text-gray-400 hover:text-terminal{% endif %}">
+           class="transition-colors {% if '/resume/' in request.path %}text-ink{% else %}text-[#6b5d47] hover:text-accent{% endif %}">
           resume
         </a>
         <a href="https://nicolaflies.com/" target="_blank" rel="noopener noreferrer"
-           class="text-gray-400 hover:text-terminal transition-colors">
+           class="text-[#6b5d47] hover:text-accent transition-colors">
           flying ↗
         </a>
       </div>

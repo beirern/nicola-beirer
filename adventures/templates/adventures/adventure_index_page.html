@@ -5,54 +5,45 @@
 
 {% block content %}
 <header class="mb-10">
-  <p class="text-gray-500 text-sm mb-2">> ls ./adventures --sort=date</p>
-  <h1 class="text-3xl font-bold text-terminal mb-4">{{ page.title }}</h1>
+  <h1 class="font-serif text-3xl font-semibold mb-4">{{ page.title }}</h1>
   {% if page.intro %}
-  <div class="text-gray-400">{{ page.intro|richtext }}</div>
+  <div class="text-[#4a4033]">{{ page.intro|richtext }}</div>
   {% endif %}
 </header>
 
-<div class="space-y-6">
+<div class="flex flex-col">
   {% for adventure in adventure_posts %}
-  <article class="border border-gray-800 rounded overflow-hidden hover:border-gray-700 transition-colors">
+  <article class="flex gap-5 border-t border-[#e3d5bc] py-6">
     {% if adventure.header_image %}
-    <a href="{% pageurl adventure %}">
-      {% image adventure.header_image width-1600 as img %}
-      <img src="{{ img.url }}" alt="{{ adventure.title }}" class="w-full h-48 object-cover">
+    <a href="{% pageurl adventure %}" class="shrink-0">
+      {% image adventure.header_image fill-200x140 as img %}
+      <img src="{{ img.url }}" alt="{{ adventure.title }}" class="w-[200px] h-[140px] object-cover">
     </a>
     {% endif %}
 
-    <div class="p-6">
-      <div class="flex items-center gap-3 mb-3">
-        <span class="text-xs border border-terminal text-terminal px-2 py-0.5 rounded uppercase tracking-wider">
-          {{ adventure.activity_type }}
-        </span>
-        <span class="text-gray-600 text-xs">{{ adventure.date_display }}</span>
-      </div>
+    <div class="flex-1">
+      <p class="text-[#8a7a5f] text-xs mb-1">{{ adventure.activity_type }} &middot; {{ adventure.date_display }}{% if adventure.location %} &middot; {{ adventure.location }}{% endif %}</p>
 
-      <h2 class="text-lg font-bold text-gray-100 mb-2">
-        <a href="{% pageurl adventure %}" class="hover:text-terminal transition-colors">{{ adventure.title }}</a>
+      <h2 class="font-serif text-lg font-semibold mb-2">
+        <a href="{% pageurl adventure %}" class="hover:text-accent transition-colors">{{ adventure.title }}</a>
       </h2>
 
       {% if adventure.intro %}
-      <p class="text-gray-400 text-sm mb-4">{{ adventure.intro }}</p>
+      <p class="text-[#4a4033] text-sm mb-2">{{ adventure.intro }}</p>
       {% endif %}
 
-      <div class="flex flex-wrap gap-4 text-sm">
-        {% if adventure.location %}
-        <span class="text-gray-500"><span class="text-terminal">></span> {{ adventure.location }}</span>
-        {% endif %}
+      <div class="flex flex-wrap gap-4 text-sm text-[#8a7a5f]">
         {% if adventure.distance_km %}
-        <span class="text-gray-500"><span class="text-terminal">></span> {{ adventure.distance_km }} km</span>
+        <span>{{ adventure.distance_km }} km</span>
         {% endif %}
         {% if adventure.elevation_gain_m %}
-        <span class="text-gray-500"><span class="text-terminal">></span> +{{ adventure.elevation_gain_m }} m</span>
+        <span>{{ adventure.elevation_gain_m }} m gain</span>
         {% endif %}
       </div>
     </div>
   </article>
   {% empty %}
-  <p class="text-gray-500">No adventures logged yet.</p>
+  <p class="text-[#8a7a5f]">No adventures logged yet.</p>
   {% endfor %}
 </div>
 {% endblock %}

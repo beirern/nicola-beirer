@@ -5,19 +5,18 @@
 
 {% block content %}
 <header class="mb-10">
-  <p class="text-gray-500 text-sm mb-2">> ls ./gallery/{{ page.slug }}</p>
-  <h1 class="text-3xl font-bold text-terminal mb-2">{{ page.title }}</h1>
-  <div class="flex items-center gap-3 text-sm text-gray-500 mb-4">
+  <h1 class="font-serif text-3xl font-semibold mb-2">{{ page.title }}</h1>
+  <div class="flex items-center gap-3 text-sm text-[#8a7a5f] mb-4">
     <span>{{ page.date|date:"M j, Y" }}</span>
     <span>&middot;</span>
     <span>{{ page.photo_count }} photo{{ page.photo_count|pluralize }}</span>
   </div>
   {% if page.description %}
-  <p class="text-gray-400 mb-4">{{ page.description }}</p>
+  <p class="text-[#4a4033] mb-4">{{ page.description }}</p>
   {% endif %}
   {% if page.adventure_page %}
-  <a href="{% pageurl page.adventure_page %}" class="inline-flex items-center gap-2 text-terminal text-sm hover:underline">
-    <span class="text-xs border border-terminal px-2 py-0.5 rounded uppercase tracking-wider">{{ page.adventure_page.activity_type }}</span>
+  <a href="{% pageurl page.adventure_page %}" class="inline-flex items-center gap-2 text-accent text-sm hover:text-[#7c3c1f]">
+    <span class="text-xs text-[#8a7a5f]">{{ page.adventure_page.activity_type }}</span>
     {{ page.adventure_page.title }} &rarr;
   </a>
   {% endif %}
@@ -27,7 +26,7 @@
   <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="photo-grid">
     {% for photo in photos %}
     {% image photo.image fill-400x400 as thumb %}
-    <div class="bg-gray-900 border border-gray-800 hover:border-terminal hover:shadow-[0_0_10px_rgba(0,255,65,0.3)] transition-all cursor-pointer rounded"
+    <div class="bg-[#f8f1e4] hover:opacity-90 transition-opacity cursor-pointer"
          data-index="{{ forloop.counter0 }}"
          data-full-url="{{ photo.image.file.url }}"
          data-caption="{{ photo.caption }}"
@@ -35,14 +34,14 @@
          data-adventure-url="{% if photo.adventure_page %}{% pageurl photo.adventure_page %}{% endif %}"
          data-adventure-title="{% if photo.adventure_page %}{{ photo.adventure_page.title }}{% endif %}"
          onclick="openLightbox({{ forloop.counter0 }})">
-      <div class="aspect-square overflow-hidden rounded-t">
+      <div class="aspect-square overflow-hidden">
         <img src="{{ thumb.url }}" alt="{{ photo.caption }}" class="w-full h-full object-cover"{% if not forloop.first %} loading="lazy"{% endif %}>
       </div>
-      <div class="px-3 py-2 space-y-0.5">
+      <div class="px-1 py-2 space-y-0.5">
         {% if photo.caption %}
-        <p class="text-gray-200 text-xs leading-snug">{{ photo.caption }}</p>
+        <p class="text-[#2b241d] text-xs leading-snug">{{ photo.caption }}</p>
         {% endif %}
-        <div class="flex items-center gap-2 text-gray-500 text-xs">
+        <div class="flex items-center gap-2 text-[#8a7a5f] text-xs">
           {% if photo.date_taken %}<span>{{ photo.date_taken|date:"M j, Y" }}</span>{% endif %}
           {% if photo.date_taken and photo.location %}<span>&middot;</span>{% endif %}
           {% if photo.location %}<span>{{ photo.location }}</span>{% endif %}
@@ -63,7 +62,7 @@
     <div class="mt-3 text-center">
       <p id="lb-caption" class="text-gray-300 text-sm"></p>
       <p id="lb-location" class="text-gray-500 text-xs mt-1"></p>
-      <a id="lb-adventure" href="#" class="text-terminal text-xs hover:underline mt-1 hidden"></a>
+      <a id="lb-adventure" href="#" class="text-[#e3a97e] text-xs hover:underline mt-1 hidden"></a>
     </div>
   </div>
 </div>
@@ -105,7 +104,7 @@
     loc.textContent = el.dataset.location;
     if (el.dataset.adventureUrl) {
       advLink.href = el.dataset.adventureUrl;
-      advLink.textContent = el.dataset.adventureTitle + ' \u2192';
+      advLink.textContent = el.dataset.adventureTitle + ' →';
       advLink.classList.remove('hidden');
     } else {
       advLink.classList.add('hidden');

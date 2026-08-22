@@ -7,8 +7,8 @@
 {% if page.merged_route_geojson %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-  #adventure-map { border-radius: 4px; border: 1px solid #1f2937; }
-  .leaflet-container { background: #0d1117; font-family: inherit; }
+  #adventure-map { border-radius: 4px; border: 1px solid #e3d5bc; }
+  .leaflet-container { background: #efe4cd; font-family: inherit; }
 </style>
 {% endif %}
 {% endblock %}
@@ -22,53 +22,48 @@
 {% endif %}
 
 <header class="mb-8">
-  <div class="flex items-center gap-3 mb-3">
-    <span class="text-xs border border-terminal text-terminal px-2 py-0.5 rounded uppercase tracking-wider">
-      {{ page.activity_type }}
-    </span>
-    <span class="text-gray-600 text-xs">{{ page.date_display }}</span>
-  </div>
+  <p class="text-accent text-sm font-semibold mb-1">{{ page.activity_type }}{% if page.location %} &middot; {{ page.location }}{% endif %}</p>
 
-  <h1 class="text-3xl font-bold text-gray-100 mb-4">{{ page.title }}</h1>
+  <h1 class="font-serif text-3xl font-semibold mb-4">{{ page.title }}</h1>
 
   {% if page.intro %}
-  <p class="text-gray-400 text-lg mb-6">{{ page.intro }}</p>
+  <p class="text-[#4a4033] text-lg mb-6">{{ page.intro }}</p>
   {% endif %}
 
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 border border-gray-800 rounded p-4 bg-gray-900/50">
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 border-t border-b border-[#e3d5bc] py-5">
     {% if page.location %}
     <div>
-      <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">location</p>
-      <p class="text-terminal text-sm font-bold">{{ page.location }}</p>
+      <p class="text-[#8a7a5f] text-xs uppercase tracking-wider mb-1">location</p>
+      <p class="font-serif text-lg font-semibold">{{ page.location }}</p>
     </div>
     {% endif %}
     {% if page.effective_distance_km %}
     <div>
-      <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">distance</p>
-      <p class="text-terminal text-sm font-bold">{{ page.effective_distance_km }} km</p>
+      <p class="text-[#8a7a5f] text-xs uppercase tracking-wider mb-1">distance</p>
+      <p class="font-serif text-lg font-semibold">{{ page.effective_distance_km }} km</p>
     </div>
     {% endif %}
     {% if page.effective_elevation_gain_m %}
     <div>
-      <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">elevation gain</p>
-      <p class="text-terminal text-sm font-bold">+{{ page.effective_elevation_gain_m }} m</p>
+      <p class="text-[#8a7a5f] text-xs uppercase tracking-wider mb-1">elevation gain</p>
+      <p class="font-serif text-lg font-semibold">+{{ page.effective_elevation_gain_m }} m</p>
     </div>
     {% endif %}
     {% if page.computed_stats.moving_time_s %}
     <div>
-      <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">moving time</p>
-      <p class="text-terminal text-sm font-bold">{{ page.computed_stats.moving_time_s|duration }}</p>
+      <p class="text-[#8a7a5f] text-xs uppercase tracking-wider mb-1">moving time</p>
+      <p class="font-serif text-lg font-semibold">{{ page.computed_stats.moving_time_s|duration }}</p>
     </div>
     {% endif %}
     {% if page.computed_stats.avg_speed_kmh %}
     <div>
-      <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">avg speed</p>
-      <p class="text-terminal text-sm font-bold">{{ page.computed_stats.avg_speed_kmh }} km/h</p>
+      <p class="text-[#8a7a5f] text-xs uppercase tracking-wider mb-1">avg speed</p>
+      <p class="font-serif text-lg font-semibold">{{ page.computed_stats.avg_speed_kmh }} km/h</p>
     </div>
     {% endif %}
     <div>
-      <p class="text-gray-600 text-xs uppercase tracking-wider mb-1">date</p>
-      <p class="text-terminal text-sm font-bold">{{ page.date_display }}</p>
+      <p class="text-[#8a7a5f] text-xs uppercase tracking-wider mb-1">date</p>
+      <p class="font-serif text-lg font-semibold">{{ page.date_display }}</p>
     </div>
   </div>
 </header>
@@ -76,14 +71,14 @@
 {% if page.tags.all %}
 <div class="flex flex-wrap gap-2 mb-8">
   {% for tag in page.tags.all %}
-  <span class="text-xs border border-gray-700 text-gray-500 px-2 py-0.5 rounded">{{ tag }}</span>
+  <span class="text-xs border border-[#e3d5bc] text-[#6b5d47] px-2 py-0.5 rounded">{{ tag }}</span>
   {% endfor %}
 </div>
 {% endif %}
 
 {% if page.merged_route_geojson %}
 <section class="mb-10 space-y-4">
-  <h2 class="text-lg font-bold text-terminal">> route</h2>
+  <h2 class="font-serif text-lg font-semibold">Route</h2>
   <div id="adventure-map" style="height:400px;"></div>
   <canvas id="elevation-chart" style="max-height:180px;"></canvas>
   {{ page.merged_route_geojson|json_script:"route-data" }}
@@ -97,18 +92,16 @@
 </article>
 
 {% if page.waypoints.all %}
-<section class="border-t border-gray-800 pt-8">
-  <h2 class="text-lg font-bold text-terminal mb-4">> waypoints</h2>
-  <div class="space-y-3">
+<section class="border-t border-[#e3d5bc] pt-8">
+  <h2 class="font-serif text-lg font-semibold mb-4">Waypoints</h2>
+  <div class="flex flex-col">
     {% for waypoint in page.waypoints.all %}
-    <div class="border border-gray-800 rounded p-4">
-      <h3 class="text-gray-100 font-bold mb-1">{{ waypoint.name }}</h3>
+    <div class="border-t border-[#e3d5bc] py-4 first:border-t-0 first:pt-0">
+      <h3 class="font-semibold mb-1">{{ waypoint.name }}</h3>
       {% if waypoint.description %}
-      <p class="text-gray-400 text-sm mb-2">{{ waypoint.description }}</p>
+      <p class="text-[#4a4033] text-sm mb-2">{{ waypoint.description }}</p>
       {% endif %}
-      <p class="text-gray-600 text-xs">
-        <span class="text-terminal">></span> {{ waypoint.latitude }}, {{ waypoint.longitude }}
-      </p>
+      <p class="text-[#8a7a5f] text-xs">{{ waypoint.latitude }}, {{ waypoint.longitude }}</p>
     </div>
     {% endfor %}
   </div>
@@ -118,19 +111,19 @@
 {% get_adventure_gallery page as gallery_albums %}
 {% get_adventure_photos page as gallery_photos %}
 {% if gallery_albums or gallery_photos %}
-<section class="border-t border-gray-800 pt-8 mt-8">
-  <h2 class="text-lg font-bold text-terminal mb-4">> gallery</h2>
+<section class="border-t border-[#e3d5bc] pt-8 mt-8">
+  <h2 class="font-serif text-lg font-semibold mb-4">Gallery</h2>
   {% if gallery_albums %}
-  <div class="space-y-3 mb-6">
+  <div class="flex flex-col mb-6">
     {% for album in gallery_albums %}
-    <a href="{% pageurl album %}" class="flex items-center gap-4 border border-gray-800 rounded p-4 hover:border-gray-700 transition-colors">
+    <a href="{% pageurl album %}" class="flex items-center gap-4 border-t border-[#e3d5bc] py-4 first:border-t-0 first:pt-0 hover:text-accent transition-colors">
       {% if album.cover_image %}
       {% image album.cover_image fill-80x80 as thumb %}
-      <img src="{{ thumb.url }}" alt="{{ album.title }}" class="w-16 h-16 object-cover rounded">
+      <img src="{{ thumb.url }}" alt="{{ album.title }}" class="w-16 h-16 object-cover">
       {% endif %}
       <div>
-        <h3 class="text-gray-100 font-bold">{{ album.title }}</h3>
-        <p class="text-gray-500 text-xs">{{ album.date|date:"M j, Y" }} &middot; {{ album.photo_count }} photo{{ album.photo_count|pluralize }}</p>
+        <h3 class="font-semibold">{{ album.title }}</h3>
+        <p class="text-[#8a7a5f] text-xs">{{ album.date|date:"M j, Y" }} &middot; {{ album.photo_count }} photo{{ album.photo_count|pluralize }}</p>
       </div>
     </a>
     {% endfor %}
@@ -140,7 +133,7 @@
   <div class="grid grid-cols-3 md:grid-cols-4 gap-2">
     {% for photo in gallery_photos %}
     {% image photo.image fill-200x200 as thumb %}
-    <a href="{% pageurl photo.page %}" class="aspect-square overflow-hidden rounded border border-gray-800 hover:border-terminal transition-colors">
+    <a href="{% pageurl photo.page %}" class="aspect-square overflow-hidden hover:opacity-90 transition-opacity">
       <img src="{{ thumb.url }}" alt="{{ photo.caption }}" class="w-full h-full object-cover" loading="lazy">
     </a>
     {% endfor %}
@@ -165,7 +158,7 @@
     maxZoom: 18,
   }).addTo(map);
 
-  const trackColors = ['#00ff41', '#ff6b35', '#4ecdc4', '#ffe66d', '#a8e6cf'];
+  const trackColors = ['#a8532e', '#57683f', '#3f5a76', '#7d5a35', '#8a5a3c'];
   geojson.features.forEach((f, i) => { f.properties._idx = i; });
 
   const routeLayer = L.geoJSON(geojson, {
@@ -210,8 +203,8 @@
       labels,
       datasets: [{
         data: elevations,
-        borderColor: '#00ff41',
-        backgroundColor: 'rgba(0,255,65,0.08)',
+        borderColor: '#a8532e',
+        backgroundColor: 'rgba(168,83,46,0.08)',
         borderWidth: 1.5,
         pointRadius: 0,
         fill: true,
@@ -231,12 +224,12 @@
       },
       scales: {
         x: {
-          ticks: { color: '#6b7280', maxTicksLimit: 8, font: { family: 'JetBrains Mono, monospace', size: 11 } },
-          grid: { color: '#1f2937' },
+          ticks: { color: '#8a7a5f', maxTicksLimit: 8, font: { family: '"Source Sans 3", sans-serif', size: 11 } },
+          grid: { color: '#e3d5bc' },
         },
         y: {
-          ticks: { color: '#6b7280', font: { family: 'JetBrains Mono, monospace', size: 11 } },
-          grid: { color: '#1f2937' },
+          ticks: { color: '#8a7a5f', font: { family: '"Source Sans 3", sans-serif', size: 11 } },
+          grid: { color: '#e3d5bc' },
         },
       },
     },

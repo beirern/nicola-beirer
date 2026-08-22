@@ -4,149 +4,120 @@
 {% block title %}Nicola Beirer{% endblock %}
 
 {% block content %}
-<section class="py-16">
-  <p class="text-gray-500 text-sm mb-2">> whoami</p>
-  <h1 class="text-4xl font-bold text-terminal mb-4">Nicola Beirer</h1>
-  <p class="text-gray-400 text-lg">Engineer. Explorer. Builder of things.</p>
+<section class="py-12">
+  <h1 class="font-serif text-4xl font-semibold mb-4">Nicola Beirer</h1>
+  <p class="text-[#4a4033] text-lg">Thinking about Life</p>
 </section>
 
-<section class="mb-16">
-  <div class="flex items-baseline justify-between mb-6">
-    <p class="text-gray-500 text-sm">> ls ./flying --all</p>
-    <a href="https://nicolaflies.com/" class="text-terminal text-sm hover:underline" target="_blank" rel="noopener noreferrer">nicolaflies.com ↗</a>
+<section class="mb-14">
+  <div class="flex items-baseline justify-between border-t border-[#e3d5bc] pt-5 mb-6">
+    <h2 class="font-serif text-xl font-semibold">From the Blog</h2>
+    <a href="/blog/" class="text-accent text-sm hover:text-[#7c3c1f]">see all →</a>
   </div>
-  <div class="space-y-4">
-
-    <article class="border border-gray-800 rounded p-6 hover:border-gray-700 transition-colors">
-      <h2 class="text-lg font-bold text-gray-100 mb-2">
-        <a href="https://nicolaflies.com/" class="hover:text-terminal transition-colors" target="_blank" rel="noopener noreferrer">
-          dashboard
-        </a>
-      </h2>
-      <p class="text-gray-400 text-sm">Flight statistics, currency status, and an overview of recent flying activity.</p>
-    </article>
-
-  </div>
-</section>
-
-<section class="mb-16">
-  <div class="flex items-baseline justify-between mb-6">
-    <p class="text-gray-500 text-sm">> ls ./adventures --sort=date | head -3</p>
-    <a href="/adventures/" class="text-terminal text-sm hover:underline">view all ↗</a>
-  </div>
-  <div class="space-y-4">
-    {% for adventure in recent_adventures %}
-    <article class="border border-gray-800 rounded p-6 hover:border-gray-700 transition-colors">
-      <div class="flex items-center gap-3 mb-3">
-        <span class="text-xs border border-terminal text-terminal px-2 py-0.5 rounded uppercase tracking-wider">
-          {{ adventure.activity_type }}
-        </span>
-        <span class="text-gray-600 text-xs">{{ adventure.date_display }}</span>
-      </div>
-      <h2 class="text-lg font-bold text-gray-100 mb-2">
-        <a href="{% pageurl adventure %}" class="hover:text-terminal transition-colors">{{ adventure.title }}</a>
-      </h2>
-      {% if adventure.intro %}
-      <p class="text-gray-400 text-sm mb-3">{{ adventure.intro }}</p>
+  <div class="flex flex-col gap-6">
+    {% for post in recent_posts %}
+    <article>
+      <p class="text-[#8a7a5f] text-xs mb-1">{{ post.date }}</p>
+      <h3 class="font-serif text-lg font-semibold mb-1">
+        <a href="{% pageurl post %}" class="hover:text-accent transition-colors">{{ post.title }}</a>
+      </h3>
+      {% if post.intro %}
+      <p class="text-[#4a4033] text-sm">{{ post.intro }}</p>
       {% endif %}
-      <div class="flex flex-wrap gap-4 text-sm">
-        {% if adventure.location %}
-        <span class="text-gray-500"><span class="text-terminal">></span> {{ adventure.location }}</span>
-        {% endif %}
-        {% if adventure.effective_distance_km %}
-        <span class="text-gray-500"><span class="text-terminal">></span> {{ adventure.effective_distance_km }} km</span>
-        {% endif %}
-        {% if adventure.effective_elevation_gain_m %}
-        <span class="text-gray-500"><span class="text-terminal">></span> +{{ adventure.effective_elevation_gain_m }} m</span>
-        {% endif %}
-      </div>
     </article>
     {% empty %}
-    <p class="text-gray-500 text-sm">No adventures logged yet.</p>
+    <p class="text-[#8a7a5f] text-sm">No posts yet.</p>
     {% endfor %}
   </div>
 </section>
 
-<section class="mb-16">
-  <div class="flex items-baseline justify-between mb-6">
-    <p class="text-gray-500 text-sm">> ls ./gallery --sort=date | head -3</p>
-    <a href="/gallery/" class="text-terminal text-sm hover:underline">view all ↗</a>
+<section class="mb-14">
+  <div class="flex items-baseline justify-between border-t border-[#e3d5bc] pt-5 mb-6">
+    <h2 class="font-serif text-xl font-semibold">Latest from Adventures</h2>
+    <a href="/adventures/" class="text-accent text-sm hover:text-[#7c3c1f]">see all →</a>
+  </div>
+  <div class="flex flex-col gap-6">
+    {% for adventure in recent_adventures %}
+    <article class="flex gap-5">
+      {% if adventure.header_image %}
+      {% image adventure.header_image fill-160x120 as thumb %}
+      <img src="{{ thumb.url }}" alt="{{ adventure.title }}" class="w-40 h-[120px] object-cover shrink-0">
+      {% endif %}
+      <div>
+        <p class="text-[#8a7a5f] text-xs mb-1">{{ adventure.activity_type }} &middot; {{ adventure.date_display }}</p>
+        <h3 class="font-serif text-lg font-semibold mb-1">
+          <a href="{% pageurl adventure %}" class="hover:text-accent transition-colors">{{ adventure.title }}</a>
+        </h3>
+        {% if adventure.intro %}
+        <p class="text-[#4a4033] text-sm mb-2">{{ adventure.intro }}</p>
+        {% endif %}
+        <p class="text-[#8a7a5f] text-sm">
+          {% if adventure.location %}{{ adventure.location }}{% endif %}
+          {% if adventure.effective_distance_km %} &middot; {{ adventure.effective_distance_km }} km{% endif %}
+          {% if adventure.effective_elevation_gain_m %} &middot; +{{ adventure.effective_elevation_gain_m }} m{% endif %}
+        </p>
+      </div>
+    </article>
+    {% empty %}
+    <p class="text-[#8a7a5f] text-sm">No adventures logged yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="mb-14">
+  <div class="flex items-baseline justify-between border-t border-[#e3d5bc] pt-5 mb-6">
+    <h2 class="font-serif text-xl font-semibold">From the Gallery</h2>
+    <a href="/gallery/" class="text-accent text-sm hover:text-[#7c3c1f]">see all →</a>
   </div>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     {% for album in recent_albums %}
-    <a href="{% pageurl album %}" class="block border border-gray-800 rounded overflow-hidden hover:border-gray-700 transition-colors group">
+    <a href="{% pageurl album %}" class="block group">
       {% if album.cover_image %}
       {% image album.cover_image fill-400x300 as cover %}
       <img src="{{ cover.url }}" alt="{{ album.title }}" class="w-full h-40 object-cover">
       {% else %}
-      <div class="w-full h-40 bg-gray-900 flex items-center justify-center">
-        <span class="text-gray-700 text-sm">no cover</span>
+      <div class="w-full h-40 bg-[#efe4cd] flex items-center justify-center">
+        <span class="text-[#8a7a5f] text-sm">no cover</span>
       </div>
       {% endif %}
-      <div class="p-3">
-        <h2 class="text-sm font-bold text-gray-100 group-hover:text-terminal transition-colors mb-1">{{ album.title }}</h2>
-        <p class="text-xs text-gray-500">{{ album.date|date:"M Y" }} &middot; {{ album.photo_count }} photo{{ album.photo_count|pluralize }}</p>
+      <div class="pt-3">
+        <h3 class="text-sm font-semibold group-hover:text-accent transition-colors mb-1">{{ album.title }}</h3>
+        <p class="text-xs text-[#8a7a5f]">{{ album.date|date:"M Y" }} &middot; {{ album.photo_count }} photo{{ album.photo_count|pluralize }}</p>
       </div>
     </a>
     {% empty %}
-    <p class="text-gray-500 text-sm">No albums yet.</p>
+    <p class="text-[#8a7a5f] text-sm">No albums yet.</p>
     {% endfor %}
   </div>
 </section>
 
-<section class="mb-16">
-  <div class="flex items-baseline justify-between mb-6">
-    <p class="text-gray-500 text-sm">> ls ./projects | head -3</p>
-    <a href="/projects/" class="text-terminal text-sm hover:underline">view all ↗</a>
+<section class="mb-14">
+  <div class="flex items-baseline justify-between border-t border-[#e3d5bc] pt-5 mb-6">
+    <h2 class="font-serif text-xl font-semibold">Projects</h2>
+    <a href="/projects/" class="text-accent text-sm hover:text-[#7c3c1f]">see all →</a>
   </div>
-  <div class="space-y-4">
+  <div class="flex flex-col gap-6">
     {% for project in recent_projects %}
-    <article class="border border-gray-800 rounded p-6 hover:border-gray-700 transition-colors">
-      <h2 class="text-xl font-bold text-gray-100 mb-2">{{ project.title }}</h2>
-      <p class="text-gray-400 mb-4">{{ project.description }}</p>
+    <article>
+      <h3 class="font-serif text-lg font-semibold mb-1">{{ project.title }}</h3>
+      <p class="text-[#4a4033] text-sm mb-2">{{ project.description }}</p>
       {% if project.keywords %}
-      <div class="flex flex-wrap gap-2 mb-4">
-        {% for keyword in project.keywords %}
-        <span class="text-xs border border-terminal text-terminal px-2 py-0.5 rounded">{{ keyword }}</span>
-        {% endfor %}
-      </div>
+      <p class="text-xs text-[#8a7a5f] mb-2">{{ project.keywords|join:" · " }}</p>
       {% endif %}
       {% if project.links %}
       <div class="flex gap-4 text-sm">
         {% for link in project.links %}
           {% if forloop.first %}
-          <a href="{{ link.url }}" class="text-terminal hover:underline">{{ link.label }} ↗</a>
+          <a href="{{ link.url }}" class="text-accent hover:text-[#7c3c1f]">{{ link.label }} ↗</a>
           {% else %}
-          <a href="{{ link.url }}" class="text-gray-400 hover:text-terminal">{{ link.label }} ↗</a>
+          <a href="{{ link.url }}" class="text-[#6b5d47] hover:text-accent">{{ link.label }} ↗</a>
           {% endif %}
         {% endfor %}
       </div>
       {% endif %}
     </article>
     {% empty %}
-    <p class="text-gray-500 text-sm">No projects yet.</p>
-    {% endfor %}
-  </div>
-</section>
-
-<section class="mb-16">
-  <div class="flex items-baseline justify-between mb-6">
-    <p class="text-gray-500 text-sm">> cat ./blog/index | head -3</p>
-    <a href="/blog/" class="text-terminal text-sm hover:underline">view all ↗</a>
-  </div>
-  <div class="space-y-4">
-    {% for post in recent_posts %}
-    <article class="border border-gray-800 rounded p-6 hover:border-gray-700 transition-colors">
-      <p class="text-gray-600 text-xs mb-1">{{ post.date }}</p>
-      <h2 class="text-lg font-bold text-gray-100 mb-2">
-        <a href="{% pageurl post %}" class="hover:text-terminal transition-colors">{{ post.title }}</a>
-      </h2>
-      {% if post.intro %}
-      <p class="text-gray-400 text-sm">{{ post.intro }}</p>
-      {% endif %}
-    </article>
-    {% empty %}
-    <p class="text-gray-500 text-sm">No posts yet.</p>
+    <p class="text-[#8a7a5f] text-sm">No projects yet.</p>
     {% endfor %}
   </div>
 </section>

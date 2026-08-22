@@ -1,12 +1,12 @@
-<section class="border border-gray-800 rounded p-5 bg-gray-900/20">
+<section class="border-t border-[#e3d5bc] pt-6">
   <div class="flex flex-wrap items-start justify-between gap-2 mb-1">
     {% if value.url %}
     <a href="{{ value.url }}" target="_blank" rel="noopener noreferrer"
-       class="text-lg font-semibold text-terminal hover:underline">{{ value.name }}</a>
+       class="font-serif text-lg font-semibold text-accent hover:text-[#7c3c1f] hover:underline">{{ value.name }}</a>
     {% else %}
-    <h3 class="text-lg font-semibold text-terminal">{{ value.name }}</h3>
+    <h3 class="font-serif text-lg font-semibold">{{ value.name }}</h3>
     {% endif %}
-    <span class="text-xs text-gray-500 shrink-0">{{ value.date }}</span>
+    <span class="text-xs text-[#8a7a5f] shrink-0">{{ value.date }}</span>
   </div>
-  <p class="text-gray-400 text-sm">{{ value.issuer }}</p>
+  <p class="text-[#6b5d47] text-sm">{{ value.issuer }}</p>
 </section>

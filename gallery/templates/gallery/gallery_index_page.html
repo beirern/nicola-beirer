@@ -5,41 +5,38 @@
 
 {% block content %}
 <section class="mb-10">
-  <p class="text-gray-500 text-sm mb-2">> ls ./gallery</p>
-  <h1 class="text-3xl font-bold text-terminal mb-4">Gallery</h1>
+  <h1 class="font-serif text-3xl font-semibold mb-4">Gallery</h1>
   {% if page.intro %}
-  <div class="text-gray-400 mb-6">{{ page.intro|richtext }}</div>
+  <div class="text-[#4a4033] mb-6">{{ page.intro|richtext }}</div>
   {% endif %}
 </section>
 
 <section>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
     {% for album in albums %}
-    <a href="{% pageurl album %}" class="block border border-gray-800 rounded overflow-hidden hover:border-gray-700 transition-colors group">
+    <a href="{% pageurl album %}" class="block group">
       {% if album.cover_image %}
       {% image album.cover_image fill-600x400 as cover %}
       <img src="{{ cover.url }}" alt="{{ album.title }}" class="w-full h-52 object-cover">
       {% else %}
-      <div class="w-full h-52 bg-gray-900 flex items-center justify-center">
-        <span class="text-gray-700 text-sm">no cover image</span>
+      <div class="w-full h-52 bg-[#efe4cd] flex items-center justify-center">
+        <span class="text-[#8a7a5f] text-sm">no cover image</span>
       </div>
       {% endif %}
-      <div class="p-4">
-        <h2 class="text-lg font-bold text-gray-100 group-hover:text-terminal transition-colors mb-1">{{ album.title }}</h2>
-        <div class="flex items-center gap-3 text-sm text-gray-500">
+      <div class="pt-3">
+        <h2 class="font-serif text-lg font-semibold group-hover:text-accent transition-colors mb-1">{{ album.title }}</h2>
+        <div class="flex items-center gap-3 text-sm text-[#8a7a5f]">
           <span>{{ album.date|date:"M Y" }}</span>
           <span>&middot;</span>
           <span>{{ album.num_photos }} photo{{ album.num_photos|pluralize }}</span>
         </div>
         {% if album.adventure_page %}
-        <span class="inline-block mt-2 text-xs border border-terminal text-terminal px-2 py-0.5 rounded uppercase tracking-wider">
-          {{ album.adventure_page.activity_type }}
-        </span>
+        <p class="mt-1 text-xs text-[#8a7a5f]">{{ album.adventure_page.activity_type }}</p>
         {% endif %}
       </div>
     </a>
     {% empty %}
-    <p class="text-gray-500 text-sm">No albums yet.</p>
+    <p class="text-[#8a7a5f] text-sm">No albums yet.</p>
     {% endfor %}
   </div>
 </section>

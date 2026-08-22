@@ -1,8 +1,8 @@
 {% load wagtailimages_tags %}
 <figure class="my-6">
   {% image value.image width-800 as img %}
-  <img src="{{ img.url }}" alt="{{ img.alt }}" class="w-full rounded border border-gray-800">
+  <img src="{{ img.url }}" alt="{{ img.alt }}" class="w-full border border-[#e3d5bc]">
   {% if value.caption %}
-  <figcaption class="text-xs text-gray-500 mt-2 text-center italic">{{ value.caption }}</figcaption>
+  <figcaption class="text-xs text-[#8a7a5f] mt-2 text-center italic">{{ value.caption }}</figcaption>
   {% endif %}
 </figure>

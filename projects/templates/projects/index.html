@@ -4,46 +4,41 @@
 
 {% block content %}
 <header class="mb-10">
-  <p class="text-gray-500 text-sm mb-2">> ls ./projects</p>
-  <h1 class="text-3xl font-bold text-terminal">Projects</h1>
+  <h1 class="font-serif text-3xl font-semibold">Projects</h1>
 </header>
 
-<div class="space-y-8">
+<div class="flex flex-col">
   {% for project in projects %}
-  <article class="border border-gray-800 rounded p-6 hover:border-gray-700 transition-colors">
-    <h2 class="text-xl font-bold text-gray-100 mb-2">{{ project.title }}</h2>
-    <p class="text-gray-400 mb-4">{{ project.description }}</p>
+  <article class="border-t border-[#e3d5bc] py-8">
+    <h2 class="font-serif text-xl font-semibold mb-2">{{ project.title }}</h2>
+    <p class="text-[#4a4033] mb-4">{{ project.description }}</p>
 
     {% if project.features %}
-    <ul class="list-none space-y-1 mb-4">
+    <ul class="list-disc pl-5 space-y-1 mb-4">
       {% for feature in project.features %}
-      <li class="text-gray-500 text-sm"><span class="text-terminal mr-2">></span>{{ feature }}</li>
+      <li class="text-[#4a4033] text-sm">{{ feature }}</li>
       {% endfor %}
     </ul>
     {% endif %}
 
     {% if project.keywords %}
-    <div class="flex flex-wrap gap-2 mb-4">
-      {% for keyword in project.keywords %}
-      <span class="text-xs border border-terminal text-terminal px-2 py-0.5 rounded">{{ keyword }}</span>
-      {% endfor %}
-    </div>
+    <p class="text-xs text-[#8a7a5f] mb-4">{{ project.keywords|join:" · " }}</p>
     {% endif %}
 
     {% if project.links %}
     <div class="flex gap-4 text-sm">
       {% for link in project.links %}
         {% if forloop.first %}
-        <a href="{{ link.url }}" class="text-terminal hover:underline">{{ link.label }} ↗</a>
+        <a href="{{ link.url }}" class="text-accent hover:text-[#7c3c1f]">{{ link.label }} ↗</a>
         {% else %}
-        <a href="{{ link.url }}" class="text-gray-400 hover:text-terminal">{{ link.label }} ↗</a>
+        <a href="{{ link.url }}" class="text-[#6b5d47] hover:text-accent">{{ link.label }} ↗</a>
         {% endif %}
       {% endfor %}
     </div>
     {% endif %}
   </article>
   {% empty %}
-  <p class="text-gray-500">No projects yet.</p>
+  <p class="text-[#8a7a5f]">No projects yet.</p>
   {% endfor %}
 </div>
 {% endblock %}

@@ -1,10 +1,10 @@
 {% if value.url %}
-<a href="{{ value.url }}" class="text-gray-400 hover:text-terminal transition-colors">
+<a href="{{ value.url }}" class="text-[#6b5d47] hover:text-accent transition-colors">
   {% if value.icon_class %}<i class="{{ value.icon_class }}"></i> {% endif %}
   {{ value.label }}
 </a>
 {% elif value.email %}
-<a href="mailto:{{ value.email }}" class="text-gray-400 hover:text-terminal transition-colors">
+<a href="mailto:{{ value.email }}" class="text-[#6b5d47] hover:text-accent transition-colors">
   {% if value.icon_class %}<i class="{{ value.icon_class }}"></i> {% endif %}
   {{ value.label }}
 </a>
