@@ -5,7 +5,14 @@ from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from taggit.models import TaggedItemBase
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
-from wagtail.blocks import CharBlock, ChoiceBlock, RichTextBlock, StructBlock, TextBlock
+from wagtail.blocks import (
+    CharBlock,
+    ChoiceBlock,
+    ListBlock,
+    RichTextBlock,
+    StructBlock,
+    TextBlock,
+)
 from wagtail.embeds.blocks import EmbedBlock
 from wagtail.fields import RichTextField, StreamField
 from wagtail.images.blocks import ImageChooserBlock
@@ -42,6 +49,15 @@ class ImageBlock(StructBlock):
     class Meta:
         template = "blog/blocks/image_block.html"
         icon = "image"
+
+
+class CarouselBlock(StructBlock):
+    images = ListBlock(ImageBlock())
+
+    class Meta:
+        template = "blog/blocks/carousel_block.html"
+        icon = "image"
+        label = "Image Carousel"
 
 
 class CodeBlock(StructBlock):
@@ -119,6 +135,7 @@ class BlogPage(Page):
                 ),
             ),
             ("image", ImageBlock()),
+            ("carousel", CarouselBlock()),
             (
                 "video",
                 EmbedBlock(

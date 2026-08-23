@@ -1,0 +1,28 @@
+{% load wagtailimages_tags %}
+<div class="my-6 relative carousel-block">
+  <div class="carousel-track flex overflow-x-auto snap-x snap-mandatory scroll-smooth gap-4 pb-2 [&::-webkit-scrollbar]:hidden"
+       style="scrollbar-width: none;">
+    {% for img_value in value.images %}
+      <figure class="snap-center shrink-0 w-full">
+        {% image img_value.image width-1000 as img %}
+        <img src="{{ img.url }}" alt="{{ img.alt }}" class="w-full max-h-[500px] object-contain border border-[#e3d5bc]">
+        {% if img_value.caption %}
+        <figcaption class="text-xs text-[#8a7a5f] mt-2 text-center italic">{{ img_value.caption }}</figcaption>
+        {% endif %}
+      </figure>
+    {% endfor %}
+  </div>
+
+  {% if value.images|length > 1 %}
+  <button type="button" aria-label="Previous photo"
+          onclick="var t=this.closest('.carousel-block').querySelector('.carousel-track'); t.scrollBy({left: -t.clientWidth, behavior: 'smooth'})"
+          class="absolute left-2 top-1/2 -translate-y-1/2 bg-cream/90 border border-[#e3d5bc] rounded-full w-9 h-9 flex items-center justify-center text-ink hover:text-accent transition-colors">
+    <i class="fa-solid fa-chevron-left text-xs"></i>
+  </button>
+  <button type="button" aria-label="Next photo"
+          onclick="var t=this.closest('.carousel-block').querySelector('.carousel-track'); t.scrollBy({left: t.clientWidth, behavior: 'smooth'})"
+          class="absolute right-2 top-1/2 -translate-y-1/2 bg-cream/90 border border-[#e3d5bc] rounded-full w-9 h-9 flex items-center justify-center text-ink hover:text-accent transition-colors">
+    <i class="fa-solid fa-chevron-right text-xs"></i>
+  </button>
+  {% endif %}
+</div>
