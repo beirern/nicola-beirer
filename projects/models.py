@@ -4,9 +4,9 @@ from django.db import models
 class ResumeProject(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
-    features = models.JSONField(default=list)
-    keywords = models.JSONField(default=list)
-    links = models.JSONField(default=list, help_text='List of {"label": "...", "url": "..."} objects')
+    features = models.JSONField(default=list, blank=True)
+    keywords = models.JSONField(default=list, blank=True)
+    links = models.JSONField(default=list, blank=True, help_text='List of {"label": "...", "url": "..."} objects')
 
     class Meta:
         ordering = ['title']
