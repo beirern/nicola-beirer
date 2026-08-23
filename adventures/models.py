@@ -10,7 +10,7 @@ from wagtail.embeds.blocks import EmbedBlock
 from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Orderable, Page
 
-from blog.models import HeadingBlock, ImageBlock
+from blog.models import CarouselBlock, HeadingBlock, ImageBlock
 
 
 class AdventurePageTag(TaggedItemBase):
@@ -134,6 +134,7 @@ class AdventurePage(Page):
             template='blog/blocks/paragraph_block.html',
         )),
         ('image', ImageBlock()),
+        ('carousel', CarouselBlock()),
         ('video', EmbedBlock(
             help_text='Paste a YouTube or Vimeo URL',
             template='blog/blocks/video_block.html',
