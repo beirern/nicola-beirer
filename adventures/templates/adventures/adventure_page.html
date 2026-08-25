@@ -4,6 +4,14 @@
 {% block title %}{{ page.title }} — Adventures — Nicola Beirer{% endblock %}
 
 {% block extra_css %}
+<style>
+  /* Responsive video iframes */
+  .video-container iframe {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: none;
+  }
+</style>
 {% if page.merged_route_geojson %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>

@@ -15,12 +15,12 @@
 
   {% if value.images|length > 1 %}
   <button type="button" aria-label="Previous photo"
-          onclick="var t=this.closest('.carousel-block').querySelector('.carousel-track'); t.scrollBy({left: -t.clientWidth, behavior: 'smooth'})"
+          onclick="var t=this.closest('.carousel-block').querySelector('.carousel-track'); t.scrollBy({left: t.scrollLeft <= 0 ? t.scrollWidth : -t.clientWidth, behavior: 'smooth'})"
           class="absolute left-2 top-1/2 -translate-y-1/2 bg-cream/90 border border-[#e3d5bc] rounded-full w-9 h-9 flex items-center justify-center text-ink hover:text-accent transition-colors">
     <i class="fa-solid fa-chevron-left text-xs"></i>
   </button>
   <button type="button" aria-label="Next photo"
-          onclick="var t=this.closest('.carousel-block').querySelector('.carousel-track'); t.scrollBy({left: t.clientWidth, behavior: 'smooth'})"
+          onclick="var t=this.closest('.carousel-block').querySelector('.carousel-track'); t.scrollBy({left: t.scrollLeft + t.clientWidth >= t.scrollWidth - 1 ? -t.scrollWidth : t.clientWidth, behavior: 'smooth'})"
           class="absolute right-2 top-1/2 -translate-y-1/2 bg-cream/90 border border-[#e3d5bc] rounded-full w-9 h-9 flex items-center justify-center text-ink hover:text-accent transition-colors">
     <i class="fa-solid fa-chevron-right text-xs"></i>
   </button>
