@@ -98,6 +98,7 @@ class AdventurePage(Page):
         RUNNING = 'running', 'Running'
         SKIING = 'skiing', 'Skiing'
         CLIMBING = 'climbing', 'Climbing'
+        MOUNTAINEERING = 'mountaineering', 'Mountaineering'
         KAYAKING = 'kayaking', 'Kayaking'
         SAILING = 'sailing', 'Sailing'
         OTHER = 'other', 'Other'
