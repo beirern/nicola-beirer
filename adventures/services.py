@@ -225,3 +225,12 @@ def process_adventure_files(adventure_page):
         computed_stats=aggregated,
         merged_route_geojson=merged,
     )
+
+    # The editor always builds its form from get_latest_revision_as_object(),
+    # not the live DB row. Without this, the revision created by the publish
+    # that triggered this processing still has the pre-processing (unparsed)
+    # child object state baked into its JSON, so the next save republishes
+    # those stale values and wipes out what we just computed - causing every
+    # subsequent save to reprocess the files again.
+    fresh = AP.objects.get(pk=adventure_page.pk)
+    fresh.save_revision(clean=False)
