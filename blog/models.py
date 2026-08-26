@@ -91,6 +91,37 @@ class QuoteBlock(StructBlock):
         icon = "openquote"
 
 
+def standard_body_blocks(paragraph_template="blog/blocks/paragraph_block.html"):
+    """Shared StreamField block set for page bodies (blog posts, adventures, ...).
+
+    Centralized so new block types don't have to be added to each page model
+    by hand and silently drift out of sync between content types.
+    """
+    return [
+        ("heading", HeadingBlock()),
+        (
+            "paragraph",
+            RichTextBlock(
+                features=["bold", "italic", "link", "ol", "ul", "blockquote"],
+                template=paragraph_template,
+            ),
+        ),
+        ("image", ImageBlock()),
+        ("carousel", CarouselBlock()),
+        (
+            "video",
+            EmbedBlock(
+                help_text="Paste a YouTube or Vimeo URL",
+                template="blog/blocks/video_block.html",
+                icon="media",
+                label="Video Embed",
+            ),
+        ),
+        ("code", CodeBlock()),
+        ("quote", QuoteBlock()),
+    ]
+
+
 class BlogIndexPage(Page):
     intro = RichTextField(blank=True)
 
@@ -125,29 +156,7 @@ class BlogPage(Page):
         help_text="Text shown for the site link, e.g. 'Update on aviationdocs.net'",
     )
     body = StreamField(
-        [
-            ("heading", HeadingBlock()),
-            (
-                "paragraph",
-                RichTextBlock(
-                    features=["bold", "italic", "link", "ol", "ul", "blockquote"],
-                    template="blog/blocks/paragraph_block.html",
-                ),
-            ),
-            ("image", ImageBlock()),
-            ("carousel", CarouselBlock()),
-            (
-                "video",
-                EmbedBlock(
-                    help_text="Paste a YouTube or Vimeo URL",
-                    template="blog/blocks/video_block.html",
-                    icon="media",
-                    label="Video Embed",
-                ),
-            ),
-            ("code", CodeBlock()),
-            ("quote", QuoteBlock()),
-        ],
+        standard_body_blocks(),
         blank=True,
         use_json_field=True,
     )

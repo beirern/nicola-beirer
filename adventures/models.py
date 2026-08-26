@@ -5,12 +5,10 @@ from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from taggit.models import TaggedItemBase
 from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
-from wagtail.blocks import RichTextBlock
-from wagtail.embeds.blocks import EmbedBlock
 from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Orderable, Page
 
-from blog.models import CarouselBlock, HeadingBlock, ImageBlock
+from blog.models import standard_body_blocks
 
 
 class AdventurePageTag(TaggedItemBase):
@@ -128,21 +126,7 @@ class AdventurePage(Page):
     )
     computed_stats = models.JSONField(null=True, blank=True)
     merged_route_geojson = models.JSONField(null=True, blank=True)
-    body = StreamField([
-        ('heading', HeadingBlock()),
-        ('paragraph', RichTextBlock(
-            features=['bold', 'italic', 'link', 'ol', 'ul', 'blockquote'],
-            template='blog/blocks/paragraph_block.html',
-        )),
-        ('image', ImageBlock()),
-        ('carousel', CarouselBlock()),
-        ('video', EmbedBlock(
-            help_text='Paste a YouTube or Vimeo URL',
-            template='blog/blocks/video_block.html',
-            icon='media',
-            label='Video Embed',
-        )),
-    ], blank=True, use_json_field=True)
+    body = StreamField(standard_body_blocks(), blank=True, use_json_field=True)
     tags = ClusterTaggableManager(through=AdventurePageTag, blank=True)
 
     @property
