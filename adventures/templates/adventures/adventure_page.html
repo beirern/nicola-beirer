@@ -65,6 +65,12 @@
       <p class="font-serif text-lg font-semibold">{{ page.computed_stats.moving_time_s|duration }}</p>
     </div>
     {% endif %}
+    {% if page.computed_stats.active_days %}
+    <div>
+      <p class="text-[#8a7a5f] text-xs uppercase tracking-wider mb-1">avg hours / active day</p>
+      <p class="font-serif text-lg font-semibold">{{ page.computed_stats.avg_hours_per_active_day }} h</p>
+    </div>
+    {% endif %}
     {% if page.computed_stats.avg_speed_kmh %}
     <div>
       <p class="text-[#8a7a5f] text-xs uppercase tracking-wider mb-1">avg speed</p>

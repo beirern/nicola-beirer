@@ -1,6 +1,7 @@
 """Parsing and aggregation logic for FIT/GPX activity files."""
 
 import io
+import math
 
 
 def _semicircles_to_degrees(semicircles):
@@ -14,6 +15,59 @@ def _get_fit_field(frame, field_name):
     return None
 
 
+def _fit_activity_dates(records):
+    """Return UTC dates with movement in timestamped FIT records."""
+    dates = set()
+    for previous, current in zip(records, records[1:]):
+        previous_time, previous_speed, previous_position = previous
+        current_time, current_speed, current_position = current
+        if not previous_time or not current_time or current_time <= previous_time:
+            continue
+        seconds = (current_time - previous_time).total_seconds()
+        if seconds > 3600:  # A recording gap is not evidence of activity between its endpoints.
+            continue
+
+        speeds = [speed for speed in (previous_speed, current_speed) if speed is not None]
+        if speeds:
+            moving = max(speeds) > 1 / 3.6  # 1 km/h, matching gpxpy's default
+        elif previous_position and current_position:
+            lat1, lon1 = previous_position
+            lat2, lon2 = current_position
+            latitude_delta = math.radians(lat2 - lat1)
+            longitude_delta = math.radians(lon2 - lon1)
+            arc = (math.sin(latitude_delta / 2) ** 2
+                   + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2))
+                   * math.sin(longitude_delta / 2) ** 2)
+            distance_m = 6371000 * 2 * math.atan2(math.sqrt(arc), math.sqrt(1 - arc))
+            moving = distance_m / seconds > 1 / 3.6
+        else:
+            moving = False
+
+        if moving:
+            dates.update((previous_time.date().isoformat(), current_time.date().isoformat()))
+    return sorted(dates)
+
+
+def _gpx_activity_dates(gpx):
+    """Return dates with moving track points, excluding unrecorded rest days."""
+    dates = set()
+    for track in gpx.tracks:
+        for segment in track.segments:
+            for previous, point in zip(segment.points, segment.points[1:]):
+                if not previous.time or not point.time:
+                    continue
+                seconds = (point.time - previous.time).total_seconds()
+                if seconds <= 0 or seconds > 3600:
+                    continue
+                if point.elevation and previous.elevation:
+                    distance = point.distance_3d(previous)
+                else:
+                    distance = point.distance_2d(previous)
+                if distance is not None and distance / seconds > 1 / 3.6:
+                    dates.update((previous.time.date().isoformat(), point.time.date().isoformat()))
+    return sorted(dates)
+
+
 def parse_fit_file(file_obj):
     """
     Parse a FIT file-like object.
@@ -24,6 +78,7 @@ def parse_fit_file(file_obj):
 
     gps_points = []
     session_stats = None
+    records = []
 
     with fitdecode.FitReader(file_obj) as fit:
         for frame in fit:
@@ -31,8 +86,16 @@ def parse_fit_file(file_obj):
                 continue
 
             if frame.name == 'record':
+                timestamp = _get_fit_field(frame, 'timestamp')
+                speed = _get_fit_field(frame, 'enhanced_speed')
+                if speed is None:
+                    speed = _get_fit_field(frame, 'speed')
                 lat = _get_fit_field(frame, 'position_lat')
                 lon = _get_fit_field(frame, 'position_long')
+                position = None
+                if lat is not None and lon is not None:
+                    position = (_semicircles_to_degrees(lat), _semicircles_to_degrees(lon))
+                records.append((timestamp, speed, position))
                 if lat is None or lon is None:
                     continue
 
@@ -63,6 +126,7 @@ def parse_fit_file(file_obj):
                     'calories': int(_get_fit_field(frame, 'total_calories') or 0),
                     'avg_speed_kmh': round((_get_fit_field(frame, 'avg_speed') or 0) * 3.6, 2),
                     'max_speed_kmh': round(float(max_speed) * 3.6, 2),
+                    'activity_dates': [],
                 }
 
     if session_stats is None:
@@ -70,7 +134,10 @@ def parse_fit_file(file_obj):
             'distance_km': 0, 'elevation_gain_m': 0, 'elevation_loss_m': 0,
             'elapsed_time_s': 0, 'moving_time_s': 0, 'calories': 0,
             'avg_speed_kmh': 0, 'max_speed_kmh': 0,
+            'activity_dates': [],
         }
+
+    session_stats['activity_dates'] = _fit_activity_dates(records)
 
     return {'stats': session_stats, 'gps_points': gps_points}
 
@@ -124,6 +191,7 @@ def parse_gpx_file(file_obj):
             'calories': None,
             'avg_speed_kmh': avg_speed_kmh,
             'max_speed_kmh': 0.0,
+            'activity_dates': _gpx_activity_dates(gpx),
         },
         'gps_points': gps_points,
     }
@@ -166,6 +234,18 @@ def aggregate_stats(stats_list):
     if total_moving_time > 0:
         avg_speed = round(total_distance_km / total_moving_time * 3600, 2)
 
+    # Old parsed stats have no activity_dates until they are explicitly reparsed.
+    # Suppress the average if any moving time would be missing from the day count.
+    complete_dates = all(
+        not stats.get('moving_time_s') or stats.get('activity_dates')
+        for stats in stats_list
+    )
+    active_dates = set()
+    if complete_dates:
+        for stats in stats_list:
+            active_dates.update(stats.get('activity_dates') or [])
+    active_days = len(active_dates) if active_dates else None
+
     return {
         'distance_km': round(total_distance_km, 3),
         'elevation_gain_m': int(total_elevation_gain),
@@ -175,6 +255,8 @@ def aggregate_stats(stats_list):
         'calories': int(total_calories),
         'avg_speed_kmh': avg_speed,
         'max_speed_kmh': round(float(max_speed), 2),
+        'active_days': active_days,
+        'avg_hours_per_active_day': round(total_moving_time / 3600 / active_days, 1) if active_days else None,
     }
 
 
@@ -182,7 +264,7 @@ def process_adventure_files(adventure_page):
     """
     Process all activity files for an AdventurePage.
 
-    - Parses unprocessed files, saves per-file results.
+    - Parses new/replaced files and legacy files without activity dates.
     - Aggregates stats across all files.
     - Updates adventure_page.computed_stats and merged_route_geojson via queryset
       update to avoid re-triggering the publish signal.
@@ -192,9 +274,12 @@ def process_adventure_files(adventure_page):
 
     all_stats = []
     all_features = []
+    source_file_ids = []
 
     for activity_file in adventure_page.activity_files.all().order_by('sort_order'):
-        if activity_file.processed_at is None:
+        source_file_ids.append(activity_file.pk)
+        if (activity_file.processed_at is None or activity_file.parsed_stats is None
+                or 'activity_dates' not in activity_file.parsed_stats):
             with activity_file.file.open('rb') as f:
                 raw = f.read()
 
@@ -219,6 +304,8 @@ def process_adventure_files(adventure_page):
             all_features.append(activity_file.route_geojson)
 
     aggregated = aggregate_stats(all_stats) if all_stats else None
+    if aggregated is not None:
+        aggregated['source_file_ids'] = sorted(source_file_ids)
     merged = merge_geojson_features(all_features) if all_features else None
 
     AP.objects.filter(pk=adventure_page.pk).update(

@@ -62,12 +62,19 @@ class ActivityFile(Orderable):
     panels = [FieldPanel('file')]
 
     def save(self, *args, **kwargs):
-        if self.file and not self.pk:
+        old_file = None
+        if self.pk:
+            old_file = type(self).objects.filter(pk=self.pk).values_list('file', flat=True).first()
+        if self.file and str(self.file) != old_file:
             name = str(self.file)
             if '.' in name:
                 ext = name.rsplit('.', 1)[-1].lower()
                 if ext in ('fit', 'gpx'):
                     self.file_type = ext
+            if old_file is not None:
+                self.parsed_stats = None
+                self.route_geojson = None
+                self.processed_at = None
         super().save(*args, **kwargs)
 
     def __str__(self):
