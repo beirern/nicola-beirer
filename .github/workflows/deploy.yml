@@ -87,6 +87,7 @@ jobs:
             AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }}
             AWS_S3_REGION_NAME=${{ secrets.AWS_REGION }}
             CARTO_API_KEY=${{ secrets.CARTO_API_KEY }}
+            WAGTAILADMIN_BASE_URL=${{ secrets.WAGTAILADMIN_BASE_URL }}
             ENVEOF
 
             cd ~/nicola-beirer

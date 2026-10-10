@@ -167,12 +167,14 @@ STORAGES = {
 }
 
 WAGTAIL_SITE_NAME = "Nicola Beirer"
+WAGTAILADMIN_BASE_URL = os.environ.get("WAGTAILADMIN_BASE_URL")
 WAGTAILIMAGES_MAX_UPLOAD_SIZE = 20 * 1024 * 1024  # 20 MB
 WAGTAILSEARCH_BACKENDS = {"default": {"BACKEND": "wagtail.search.backends.database"}}
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
 
 # S3 Media Storage — only active when bucket name is set
+AWS_S3_FILE_OVERWRITE = False
 AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", "")
 AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
 AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME", "")
