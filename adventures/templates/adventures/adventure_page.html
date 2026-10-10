@@ -13,10 +13,10 @@
   }
 </style>
 {% if page.merged_route_geojson %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css"/>
 <style>
   #adventure-map { border-radius: 4px; border: 1px solid #e3d5bc; }
-  .leaflet-container { background: #efe4cd; font-family: inherit; }
+  .maplibregl-map { background: #efe4cd; font-family: inherit; }
 </style>
 {% endif %}
 {% endblock %}
@@ -155,31 +155,52 @@
 
 {% block extra_js %}
 {% if page.merged_route_geojson %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-<script>
+<script type="module">
+import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.mjs';
+
 (function () {
   const geojson = JSON.parse(document.getElementById('route-data').textContent);
 
   // ── Map ──────────────────────────────────────────────────────────────────
-  const map = L.map('adventure-map');
-  L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key={{ carto_api_key|urlencode }}', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    maxZoom: 19,
-  }).addTo(map);
-
+  const cartoKey = '{{ carto_api_key|escapejs }}';
   const trackColors = ['#a8532e', '#57683f', '#3f5a76', '#7d5a35', '#8a5a3c'];
-  geojson.features.forEach((f, i) => { f.properties._idx = i; });
+  geojson.features.forEach((feature, i) => {
+    feature.properties = { ...feature.properties, _color: trackColors[i % trackColors.length] };
+  });
 
-  const routeLayer = L.geoJSON(geojson, {
-    style: (feature) => ({
-      color: trackColors[feature.properties._idx % trackColors.length],
-      weight: 3,
-      opacity: 0.85,
-    }),
-  }).addTo(map);
+  const map = new maplibregl.Map({
+    container: 'adventure-map',
+    style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+    transformRequest: (url) => {
+      const requestUrl = new URL(url, window.location.href);
+      if (requestUrl.hostname === 'basemaps.cartocdn.com' ||
+          requestUrl.hostname === 'tiles.basemaps.cartocdn.com') {
+        requestUrl.searchParams.set('key', cartoKey);
+      }
+      return { url: requestUrl.href };
+    },
+  });
+  map.addControl(new maplibregl.NavigationControl(), 'top-right');
+  map.on('load', () => {
+    map.addSource('adventure-route', { type: 'geojson', data: geojson });
+    map.addLayer({
+      id: 'adventure-route',
+      type: 'line',
+      source: 'adventure-route',
+      paint: {
+        'line-color': ['get', '_color'],
+        'line-width': 3,
+        'line-opacity': 0.85,
+      },
+    });
 
-  map.fitBounds(routeLayer.getBounds(), { padding: [20, 20] });
+    const bounds = new maplibregl.LngLatBounds();
+    geojson.features.forEach(feature => {
+      feature.geometry.coordinates.forEach(([lon, lat]) => bounds.extend([lon, lat]));
+    });
+    if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 20, maxZoom: 15 });
+  });
 
   // ── Elevation chart ──────────────────────────────────────────────────────
   function haversineKm(lat1, lon1, lat2, lon2) {
