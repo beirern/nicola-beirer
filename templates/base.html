@@ -65,6 +65,8 @@
     {% block content %}{% endblock %}
   </main>
 
+  {% load static %}
+  <script src="{% static 'adventures/units.js' %}"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -11,6 +11,8 @@
   {% endif %}
 </header>
 
+<div class="flex justify-end mb-3">{% include "adventures/includes/unit_toggle.html" %}</div>
+
 <div class="flex flex-col">
   {% for adventure in adventure_posts %}
   <article class="flex gap-5 border-t border-[#e3d5bc] py-6">
@@ -33,11 +35,11 @@
       {% endif %}
 
       <div class="flex flex-wrap gap-4 text-sm text-[#8a7a5f]">
-        {% if adventure.distance_km %}
-        <span>{{ adventure.distance_km }} km</span>
+        {% if adventure.effective_distance_km %}
+        <span data-distance-km="{{ adventure.effective_distance_km }}">{{ adventure.effective_distance_km }} km</span>
         {% endif %}
-        {% if adventure.elevation_gain_m %}
-        <span>{{ adventure.elevation_gain_m }} m gain</span>
+        {% if adventure.effective_elevation_gain_m %}
+        <span data-elevation-m="{{ adventure.effective_elevation_gain_m }}" data-suffix=" gain">{{ adventure.effective_elevation_gain_m }} m gain</span>
         {% endif %}
       </div>
     </div>

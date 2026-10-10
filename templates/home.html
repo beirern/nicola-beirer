@@ -32,9 +32,12 @@
 </section>
 
 <section class="mb-14">
-  <div class="flex items-baseline justify-between border-t border-[#e3d5bc] pt-5 mb-6">
+  <div class="flex items-start justify-between border-t border-[#e3d5bc] pt-5 mb-6 gap-4">
     <h2 class="font-serif text-xl font-semibold">Latest from Adventures</h2>
-    <a href="/adventures/" class="text-accent text-sm hover:text-[#7c3c1f]">see all →</a>
+    <div class="flex flex-wrap justify-end items-center gap-4">
+      {% include "adventures/includes/unit_toggle.html" %}
+      <a href="/adventures/" class="text-accent text-sm hover:text-[#7c3c1f]">see all →</a>
+    </div>
   </div>
   <div class="flex flex-col gap-6">
     {% for adventure in recent_adventures %}
@@ -53,8 +56,8 @@
         {% endif %}
         <p class="text-[#8a7a5f] text-sm">
           {% if adventure.location %}{{ adventure.location }}{% endif %}
-          {% if adventure.effective_distance_km %} &middot; {{ adventure.effective_distance_km }} km{% endif %}
-          {% if adventure.effective_elevation_gain_m %} &middot; +{{ adventure.effective_elevation_gain_m }} m{% endif %}
+          {% if adventure.effective_distance_km %} &middot; <span data-distance-km="{{ adventure.effective_distance_km }}">{{ adventure.effective_distance_km }} km</span>{% endif %}
+          {% if adventure.effective_elevation_gain_m %} &middot; <span data-elevation-m="{{ adventure.effective_elevation_gain_m }}" data-prefix="+">+{{ adventure.effective_elevation_gain_m }} m</span>{% endif %}
         </p>
       </div>
     </article>

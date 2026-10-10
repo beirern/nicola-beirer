@@ -38,6 +38,8 @@
   <p class="text-[#4a4033] text-lg mb-6">{{ page.intro }}</p>
   {% endif %}
 
+  <div class="flex justify-end mb-3">{% include "adventures/includes/unit_toggle.html" %}</div>
+
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 border-t border-b border-[#e3d5bc] py-5">
     {% if page.location %}
     <div>
@@ -48,13 +50,13 @@
     {% if page.effective_distance_km %}
     <div>
       <p class="text-[#8a7a5f] text-xs uppercase tracking-wider mb-1">distance</p>
-      <p class="font-serif text-lg font-semibold">{{ page.effective_distance_km }} km</p>
+      <p class="font-serif text-lg font-semibold" data-distance-km="{{ page.effective_distance_km }}">{{ page.effective_distance_km }} km</p>
     </div>
     {% endif %}
     {% if page.effective_elevation_gain_m %}
     <div>
       <p class="text-[#8a7a5f] text-xs uppercase tracking-wider mb-1">elevation gain</p>
-      <p class="font-serif text-lg font-semibold">+{{ page.effective_elevation_gain_m }} m</p>
+      <p class="font-serif text-lg font-semibold" data-elevation-m="{{ page.effective_elevation_gain_m }}" data-prefix="+">+{{ page.effective_elevation_gain_m }} m</p>
     </div>
     {% endif %}
     {% if page.computed_stats.moving_time_s %}
@@ -66,7 +68,7 @@
     {% if page.computed_stats.avg_speed_kmh %}
     <div>
       <p class="text-[#8a7a5f] text-xs uppercase tracking-wider mb-1">avg speed</p>
-      <p class="font-serif text-lg font-semibold">{{ page.computed_stats.avg_speed_kmh }} km/h</p>
+      <p class="font-serif text-lg font-semibold" data-speed-kmh="{{ page.computed_stats.avg_speed_kmh }}">{{ page.computed_stats.avg_speed_kmh }} km/h</p>
     </div>
     {% endif %}
     <div>
@@ -195,21 +197,22 @@
   const stride = Math.max(1, Math.floor(allCoords.length / 500));
   const sampled = allCoords.filter((_, i) => i % stride === 0);
 
-  const labels = ['0.00'];
+  const distancesKm = [0];
   const elevations = [sampled[0][2]];
   let cumDist = 0;
   for (let i = 1; i < sampled.length; i++) {
     const [lon1, lat1] = sampled[i - 1];
     const [lon2, lat2] = sampled[i];
     cumDist += haversineKm(lat1, lon1, lat2, lon2) * stride;
-    labels.push(cumDist.toFixed(2));
+    distancesKm.push(cumDist);
     elevations.push(sampled[i][2]);
   }
 
-  new Chart(document.getElementById('elevation-chart'), {
+  const units = window.adventureUnits;
+  const chart = new Chart(document.getElementById('elevation-chart'), {
     type: 'line',
     data: {
-      labels,
+      labels: distancesKm,
       datasets: [{
         data: elevations,
         borderColor: '#a8532e',
@@ -226,23 +229,36 @@
         legend: { display: false },
         tooltip: {
           callbacks: {
-            title: (items) => `${items[0].label} km`,
-            label: (item) => `${item.raw} m`,
+            title: (items) => `${Number(items[0].label).toFixed(2)} ${units.get() === 'imperial' ? 'mi' : 'km'}`,
+            label: (item) => `${Math.round(item.raw)} ${units.get() === 'imperial' ? 'ft' : 'm'}`,
           },
         },
       },
       scales: {
         x: {
+          title: { display: true, text: 'Distance (km)', color: '#8a7a5f' },
           ticks: { color: '#8a7a5f', maxTicksLimit: 8, font: { family: '"Source Sans 3", sans-serif', size: 11 } },
           grid: { color: '#e3d5bc' },
         },
         y: {
+          title: { display: true, text: 'Elevation (m)', color: '#8a7a5f' },
           ticks: { color: '#8a7a5f', font: { family: '"Source Sans 3", sans-serif', size: 11 } },
           grid: { color: '#e3d5bc' },
         },
       },
     },
   });
+
+  function updateChartUnits() {
+    const imperial = units.get() === 'imperial';
+    chart.data.labels = distancesKm.map(km => Number((imperial ? km * units.kmToMiles : km).toFixed(2)));
+    chart.data.datasets[0].data = elevations.map(m => imperial ? m * units.mToFeet : m);
+    chart.options.scales.x.title.text = imperial ? 'Distance (mi)' : 'Distance (km)';
+    chart.options.scales.y.title.text = imperial ? 'Elevation (ft)' : 'Elevation (m)';
+    chart.update();
+  }
+  document.addEventListener('adventureunitschange', updateChartUnits);
+  updateChartUnits();
 })();
 </script>
 {% endif %}
