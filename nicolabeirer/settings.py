@@ -167,6 +167,7 @@ STORAGES = {
 }
 
 WAGTAIL_SITE_NAME = "Nicola Beirer"
+WAGTAILIMAGES_MAX_UPLOAD_SIZE = 20 * 1024 * 1024  # 20 MB
 WAGTAILSEARCH_BACKENDS = {"default": {"BACKEND": "wagtail.search.backends.database"}}
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
