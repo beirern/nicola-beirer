@@ -1,5 +1,6 @@
 import datetime
 
+from django.conf import settings
 from django.db import models
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
@@ -128,6 +129,11 @@ class AdventurePage(Page):
     merged_route_geojson = models.JSONField(null=True, blank=True)
     body = StreamField(standard_body_blocks(), blank=True, use_json_field=True)
     tags = ClusterTaggableManager(through=AdventurePageTag, blank=True)
+
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        context['carto_api_key'] = settings.CARTO_API_KEY
+        return context
 
     @property
     def effective_distance_km(self):

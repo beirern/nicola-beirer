@@ -37,6 +37,8 @@ CSRF_TRUSTED_ORIGINS = (
     else []
 )
 
+CARTO_API_KEY = os.environ["CARTO_API_KEY"]
+
 # Application definition
 
 INSTALLED_APPS = [
