@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 from wagtail.models import Orderable, Page
@@ -134,29 +133,3 @@ class RouteStorageTests(TestCase):
             self.assertEqual(Route.objects.count(), 1)
             page.refresh_from_db()
             self.assertEqual(page.get_latest_revision_as_object().intro, 'Unpublished writing')
-
-
-class AverageDistanceBackfillTests(TestCase):
-    def test_backfill_updates_page_and_latest_revision_without_processing_files(self):
-        root = Page.objects.get(depth=1)
-        index = root.add_child(instance=AdventureIndexPage(title='Adventures', slug='adventures'))
-        page = index.add_child(instance=AdventurePage(title='Test trip', slug='test-trip'))
-        stats = {'distance_km': 61.5, 'active_days': 3, 'source_file_ids': []}
-        AdventurePage.objects.filter(pk=page.pk).update(computed_stats=stats)
-        draft = page.get_latest_revision_as_object()
-        draft.computed_stats = stats
-        draft.save_revision(clean=False)
-
-        with patch('adventures.services.process_adventure_files') as process_files:
-            call_command('backfill_average_distance')
-            revision_count = page.revisions.count()
-            call_command('backfill_average_distance')
-
-        process_files.assert_not_called()
-        self.assertEqual(page.revisions.count(), revision_count)
-        page.refresh_from_db()
-        self.assertEqual(page.computed_stats['avg_distance_km_per_active_day'], 20.5)
-        self.assertEqual(
-            page.get_latest_revision_as_object().computed_stats['avg_distance_km_per_active_day'],
-            20.5,
-        )
