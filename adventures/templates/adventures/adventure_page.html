@@ -70,6 +70,12 @@
       <p class="text-[#8a7a5f] text-xs uppercase tracking-wider mb-1">avg hours / active day</p>
       <p class="font-serif text-lg font-semibold">{{ page.computed_stats.avg_hours_per_active_day }} h</p>
     </div>
+    {% if page.computed_stats.avg_distance_km_per_active_day is not None %}
+    <div>
+      <p class="text-[#8a7a5f] text-xs uppercase tracking-wider mb-1">avg distance / active day</p>
+      <p class="font-serif text-lg font-semibold" data-distance-km="{{ page.computed_stats.avg_distance_km_per_active_day }}" data-suffix="/day">{{ page.computed_stats.avg_distance_km_per_active_day }} km/day</p>
+    </div>
+    {% endif %}
     {% endif %}
     {% if page.computed_stats.avg_speed_kmh %}
     <div>

@@ -270,9 +270,9 @@ def aggregate_stats(stats_list):
         avg_speed = round(total_distance_km / total_moving_time * 3600, 2)
 
     # Old parsed stats have no activity_dates until they are explicitly reparsed.
-    # Suppress the average if any moving time would be missing from the day count.
+    # Suppress daily averages if any moving time or distance lacks a day count.
     complete_dates = all(
-        not stats.get('moving_time_s') or stats.get('activity_dates')
+        not (stats.get('moving_time_s') or stats.get('distance_km')) or stats.get('activity_dates')
         for stats in stats_list
     )
     active_dates = set()
@@ -292,6 +292,7 @@ def aggregate_stats(stats_list):
         'max_speed_kmh': round(float(max_speed), 2),
         'active_days': active_days,
         'avg_hours_per_active_day': round(total_moving_time / 3600 / active_days, 1) if active_days else None,
+        'avg_distance_km_per_active_day': round(total_distance_km / active_days, 1) if active_days else None,
     }
 
 

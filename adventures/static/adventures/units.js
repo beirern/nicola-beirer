@@ -16,9 +16,10 @@
   function render() {
     document.querySelectorAll('[data-distance-km]').forEach((element) => {
       const km = Number(element.dataset.distanceKm);
+      const suffix = element.dataset.suffix || '';
       element.textContent = units === 'imperial'
-        ? `${format(km * KM_TO_MILES, 2)} mi`
-        : `${format(km, 2)} km`;
+        ? `${format(km * KM_TO_MILES, 2)} mi${suffix}`
+        : `${format(km, 2)} km${suffix}`;
     });
     document.querySelectorAll('[data-elevation-m]').forEach((element) => {
       const meters = Number(element.dataset.elevationM);
