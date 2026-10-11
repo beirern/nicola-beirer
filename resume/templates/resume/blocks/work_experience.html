@@ -6,7 +6,7 @@
   </div>
   <p class="text-[#6b5d47] text-sm mb-3">{{ value.company }}{% if value.location %} · {{ value.location }}{% endif %}</p>
   {% if value.description %}
-  <div class="text-[#4a4033] text-sm leading-relaxed mb-3">{{ value.description|richtext }}</div>
+  <div class="richtext-content text-[#4a4033] text-sm leading-relaxed mb-3">{{ value.description|richtext }}</div>
   {% endif %}
   {% if value.achievements %}
   <ul class="list-disc pl-5 space-y-1">
