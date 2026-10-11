@@ -2,6 +2,7 @@ import datetime
 
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from taggit.models import TaggedItemBase
@@ -42,6 +43,23 @@ class Waypoint(Orderable):
         return self.name
 
 
+class Route(models.Model):
+    """A processed track, stored independently of Wagtail page revisions."""
+
+    name = models.CharField(max_length=255)
+    geojson_file = models.FileField(upload_to='routes/')
+    distance_km = models.DecimalField(max_digits=9, decimal_places=3, null=True, blank=True)
+    elevation_gain_m = models.IntegerField(null=True, blank=True)
+    min_longitude = models.FloatField(null=True, blank=True)
+    min_latitude = models.FloatField(null=True, blank=True)
+    max_longitude = models.FloatField(null=True, blank=True)
+    max_latitude = models.FloatField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
 class ActivityFile(Orderable):
     page = ParentalKey(
         'adventures.AdventurePage',
@@ -56,7 +74,7 @@ class ActivityFile(Orderable):
         default='gpx',
     )
     parsed_stats = models.JSONField(null=True, blank=True)
-    route_geojson = models.JSONField(null=True, blank=True)
+    route = models.ForeignKey(Route, null=True, blank=True, on_delete=models.SET_NULL, related_name='activity_files')
     processed_at = models.DateTimeField(null=True, blank=True)
 
     panels = [FieldPanel('file')]
@@ -73,7 +91,7 @@ class ActivityFile(Orderable):
                     self.file_type = ext
             if old_file is not None:
                 self.parsed_stats = None
-                self.route_geojson = None
+                self.route = None
                 self.processed_at = None
         super().save(*args, **kwargs)
 
@@ -133,13 +151,15 @@ class AdventurePage(Page):
         help_text='Manual override. Leave blank to use value computed from uploaded activity files.',
     )
     computed_stats = models.JSONField(null=True, blank=True)
-    merged_route_geojson = models.JSONField(null=True, blank=True)
     body = StreamField(standard_body_blocks(), blank=True, use_json_field=True)
     tags = ClusterTaggableManager(through=AdventurePageTag, blank=True)
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         context['carto_api_key'] = settings.CARTO_API_KEY
+        route_ids = ActivityFile.objects.filter(page_id=self.pk, route__isnull=False).order_by('sort_order').values_list('route_id', flat=True)
+        context['route_urls'] = [reverse('adventure-route-geojson', args=[route_id]) for route_id in route_ids]
+        context['has_route'] = bool(context['route_urls'])
         return context
 
     @property

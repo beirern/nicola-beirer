@@ -12,7 +12,7 @@
     border: none;
   }
 </style>
-{% if page.merged_route_geojson %}
+{% if has_route %}
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css"/>
 <style>
   #adventure-map { border-radius: 4px; border: 1px solid #e3d5bc; }
@@ -92,12 +92,12 @@
 </div>
 {% endif %}
 
-{% if page.merged_route_geojson %}
+{% if has_route %}
 <section class="mb-10 space-y-4">
   <h2 class="font-serif text-lg font-semibold">Route</h2>
   <div id="adventure-map" style="height:400px;"></div>
   <canvas id="elevation-chart" style="max-height:180px;"></canvas>
-  {{ page.merged_route_geojson|json_script:"route-data" }}
+  {{ route_urls|json_script:"route-urls" }}
 </section>
 {% endif %}
 
@@ -160,13 +160,20 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if page.merged_route_geojson %}
+{% if has_route %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script type="module">
 import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.mjs';
 
-(function () {
-  const geojson = JSON.parse(document.getElementById('route-data').textContent);
+(async function () {
+  const routeUrls = JSON.parse(document.getElementById('route-urls').textContent);
+  const routes = await Promise.all(routeUrls.map(async url => {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Route request failed: ${response.status}`);
+    return response.json();
+  }));
+  const geojson = { type: 'FeatureCollection', features: routes.flatMap(route => route.features) };
+  if (!geojson.features.some(feature => feature.geometry.coordinates.length)) return;
 
   // ── Map ──────────────────────────────────────────────────────────────────
   const cartoKey = '{{ carto_api_key|escapejs }}';
@@ -285,7 +292,7 @@ import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-
   }
   document.addEventListener('adventureunitschange', updateChartUnits);
   updateChartUnits();
-})();
+})().catch(error => console.error('Could not load adventure routes', error));
 </script>
 {% endif %}
 {% endblock %}

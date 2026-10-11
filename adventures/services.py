@@ -1,7 +1,11 @@
 """Parsing and aggregation logic for FIT/GPX activity files."""
 
 import io
+import json
 import math
+import uuid
+
+from django.core.files.base import ContentFile
 
 
 def _semicircles_to_degrees(semicircles):
@@ -217,6 +221,37 @@ def merge_geojson_features(features):
     }
 
 
+def create_route(activity_file, result):
+    """Persist processed geometry outside the page and its revisions."""
+    from adventures.models import Route
+
+    points = result['gps_points']
+    stats = result['stats']
+    route = Route(
+        name=activity_file.file.name.rsplit('/', 1)[-1][:255],
+        distance_km=stats.get('distance_km'),
+        elevation_gain_m=stats.get('elevation_gain_m'),
+        min_longitude=min((point[0] for point in points), default=None),
+        min_latitude=min((point[1] for point in points), default=None),
+        max_longitude=max((point[0] for point in points), default=None),
+        max_latitude=max((point[1] for point in points), default=None),
+    )
+    feature = build_geojson_linestring(points)
+    payload = merge_geojson_features([feature])
+    filename = f'{uuid.uuid4().hex}.geojson'
+    route.geojson_file.save(
+        filename,
+        ContentFile(json.dumps(payload, separators=(',', ':')).encode('utf-8')),
+        save=False,
+    )
+    try:
+        route.save()
+    except Exception:
+        route.geojson_file.delete(save=False)
+        raise
+    return route
+
+
 def aggregate_stats(stats_list):
     """Aggregate a list of per-file stats dicts into totals."""
     total_distance_km = sum(s.get('distance_km') or 0 for s in stats_list)
@@ -264,21 +299,20 @@ def process_adventure_files(adventure_page):
     """
     Process all activity files for an AdventurePage.
 
-    - Parses new/replaced files and legacy files without activity dates.
+    - Parses files without a Route and new/replaced files.
     - Aggregates stats across all files.
-    - Updates adventure_page.computed_stats and merged_route_geojson via queryset
-      update to avoid re-triggering the publish signal.
+    - Keeps route geometry outside page revisions.
     """
     from django.utils import timezone
     from adventures.models import ActivityFile, AdventurePage as AP
 
     all_stats = []
-    all_features = []
     source_file_ids = []
 
     for activity_file in adventure_page.activity_files.all().order_by('sort_order'):
         source_file_ids.append(activity_file.pk)
-        if (activity_file.processed_at is None or activity_file.parsed_stats is None
+        if (activity_file.route_id is None or activity_file.processed_at is None
+                or activity_file.parsed_stats is None
                 or 'activity_dates' not in activity_file.parsed_stats):
             with activity_file.file.open('rb') as f:
                 raw = f.read()
@@ -288,36 +322,39 @@ def process_adventure_files(adventure_page):
             else:
                 result = parse_gpx_file(io.BytesIO(raw))
 
-            feature = build_geojson_linestring(result['gps_points'])
+            route = create_route(activity_file, result)
 
             ActivityFile.objects.filter(pk=activity_file.pk).update(
                 parsed_stats=result['stats'],
-                route_geojson=feature,
+                route=route,
                 processed_at=timezone.now(),
             )
             activity_file.parsed_stats = result['stats']
-            activity_file.route_geojson = feature
+            activity_file.route = route
 
         if activity_file.parsed_stats:
             all_stats.append(activity_file.parsed_stats)
-        if activity_file.route_geojson:
-            all_features.append(activity_file.route_geojson)
 
     aggregated = aggregate_stats(all_stats) if all_stats else None
     if aggregated is not None:
         aggregated['source_file_ids'] = sorted(source_file_ids)
-    merged = merge_geojson_features(all_features) if all_features else None
+    AP.objects.filter(pk=adventure_page.pk).update(computed_stats=aggregated)
 
-    AP.objects.filter(pk=adventure_page.pk).update(
-        computed_stats=aggregated,
-        merged_route_geojson=merged,
-    )
-
-    # The editor always builds its form from get_latest_revision_as_object(),
-    # not the live DB row. Without this, the revision created by the publish
-    # that triggered this processing still has the pre-processing (unparsed)
-    # child object state baked into its JSON, so the next save republishes
-    # those stale values and wipes out what we just computed - causing every
-    # subsequent save to reprocess the files again.
+    # Keep the latest revision's draft text and fields, while updating the
+    # processed state of any matching inline files. A fresh revision prevents
+    # the editor from restoring stale unprocessed children on its next save.
     fresh = AP.objects.get(pk=adventure_page.pk)
-    fresh.save_revision(clean=False)
+    latest = fresh.get_latest_revision_as_object()
+    processed_files = {item.pk: item for item in fresh.activity_files.all()}
+    revision_files = list(latest.activity_files.all())
+    for item in revision_files:
+        processed = processed_files.get(item.pk)
+        if processed and item.file.name == processed.file.name:
+            item.route_id = processed.route_id
+            item.parsed_stats = processed.parsed_stats
+            item.processed_at = processed.processed_at
+    if {(item.pk, item.file.name) for item in revision_files} == {
+        (item.pk, item.file.name) for item in processed_files.values()
+    }:
+        latest.computed_stats = aggregated
+    latest.save_revision(clean=False)
