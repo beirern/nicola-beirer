@@ -225,21 +225,28 @@ import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-
     return 2 * R * Math.asin(Math.sqrt(a));
   }
 
-  // Sample every Nth point to keep the chart responsive
-  const allCoords = geojson.features.flatMap(f => f.geometry.coordinates);
-  const stride = Math.max(1, Math.floor(allCoords.length / 500));
-  const sampled = allCoords.filter((_, i) => i % stride === 0);
-
-  const distancesKm = [0];
-  const elevations = [sampled[0][2]];
+  // Measure every route segment before sampling chart points. Separate files
+  // may start far apart, so the gap between them is not traveled distance.
+  const pointCount = geojson.features.reduce((count, feature) => count + feature.geometry.coordinates.length, 0);
+  const stride = Math.max(1, Math.ceil(pointCount / 500));
+  const distancesKm = [];
+  const elevations = [];
   let cumDist = 0;
-  for (let i = 1; i < sampled.length; i++) {
-    const [lon1, lat1] = sampled[i - 1];
-    const [lon2, lat2] = sampled[i];
-    cumDist += haversineKm(lat1, lon1, lat2, lon2) * stride;
-    distancesKm.push(cumDist);
-    elevations.push(sampled[i][2]);
-  }
+  let pointIndex = 0;
+  geojson.features.forEach(feature => {
+    const coords = feature.geometry.coordinates;
+    coords.forEach(([lon, lat, elevation], i) => {
+      if (i > 0) {
+        const [prevLon, prevLat] = coords[i - 1];
+        cumDist += haversineKm(prevLat, prevLon, lat, lon);
+      }
+      if (pointIndex % stride === 0 || i === coords.length - 1) {
+        distancesKm.push(cumDist);
+        elevations.push(elevation);
+      }
+      pointIndex++;
+    });
+  });
 
   const units = window.adventureUnits;
   const chart = new Chart(document.getElementById('elevation-chart'), {
