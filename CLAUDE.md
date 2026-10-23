@@ -11,15 +11,17 @@ This project runs via Docker. Start it with:
 docker compose up   # if image already built
 ```
 
+For local Python commands, install the locked dependencies with `uv sync --locked`, then run project commands through `uv run`.
+
 **Database migrations:**
 ```bash
-python manage.py migrate --noinput
-python manage.py collectstatic --noinput
+uv run python manage.py migrate --noinput
+uv run python manage.py collectstatic --noinput
 ```
 
 **Load fixture data:**
 ```bash
-python manage.py loaddata fixture.json
+uv run python manage.py loaddata fixture.json
 ```
 
 Configuration is via `.env` file (database, AWS credentials, Django secret key).

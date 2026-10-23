@@ -7,9 +7,9 @@ to Wagtail's image library (and therefore to S3 when AWS_STORAGE_BUCKET_NAME is 
 Stories are excluded.
 
 Usage:
-    python manage.py import_meta_photos --exports-dir /path/to/meta-exports
-    python manage.py import_meta_photos --exports-dir /path/to/meta-exports --dry-run
-    python manage.py import_meta_photos --exports-dir /path/to/meta-exports --limit 10
+    uv run python manage.py import_meta_photos --exports-dir /path/to/meta-exports
+    uv run python manage.py import_meta_photos --exports-dir /path/to/meta-exports --dry-run
+    uv run python manage.py import_meta_photos --exports-dir /path/to/meta-exports --limit 10
 
 The command is fully idempotent: re-running it skips already-imported photos
 by matching on Wagtail Image file_hash (SHA-1).
