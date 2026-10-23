@@ -1,6 +1,5 @@
 """Parsing and aggregation logic for FIT/GPX activity files."""
 
-import io
 import json
 import math
 import uuid
@@ -28,10 +27,14 @@ def _fit_activity_dates(records):
         if not previous_time or not current_time or current_time <= previous_time:
             continue
         seconds = (current_time - previous_time).total_seconds()
-        if seconds > 3600:  # A recording gap is not evidence of activity between its endpoints.
+        if (
+            seconds > 3600
+        ):  # A recording gap is not evidence of activity between its endpoints.
             continue
 
-        speeds = [speed for speed in (previous_speed, current_speed) if speed is not None]
+        speeds = [
+            speed for speed in (previous_speed, current_speed) if speed is not None
+        ]
         if speeds:
             moving = max(speeds) > 1 / 3.6  # 1 km/h, matching gpxpy's default
         elif previous_position and current_position:
@@ -39,16 +42,21 @@ def _fit_activity_dates(records):
             lat2, lon2 = current_position
             latitude_delta = math.radians(lat2 - lat1)
             longitude_delta = math.radians(lon2 - lon1)
-            arc = (math.sin(latitude_delta / 2) ** 2
-                   + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2))
-                   * math.sin(longitude_delta / 2) ** 2)
+            arc = (
+                math.sin(latitude_delta / 2) ** 2
+                + math.cos(math.radians(lat1))
+                * math.cos(math.radians(lat2))
+                * math.sin(longitude_delta / 2) ** 2
+            )
             distance_m = 6371000 * 2 * math.atan2(math.sqrt(arc), math.sqrt(1 - arc))
             moving = distance_m / seconds > 1 / 3.6
         else:
             moving = False
 
         if moving:
-            dates.update((previous_time.date().isoformat(), current_time.date().isoformat()))
+            dates.update(
+                (previous_time.date().isoformat(), current_time.date().isoformat())
+            )
     return sorted(dates)
 
 
@@ -68,7 +76,12 @@ def _gpx_activity_dates(gpx):
                 else:
                     distance = point.distance_2d(previous)
                 if distance is not None and distance / seconds > 1 / 3.6:
-                    dates.update((previous.time.date().isoformat(), point.time.date().isoformat()))
+                    dates.update(
+                        (
+                            previous.time.date().isoformat(),
+                            point.time.date().isoformat(),
+                        )
+                    )
     return sorted(dates)
 
 
@@ -98,7 +111,10 @@ def parse_fit_file(file_obj):
                 lon = _get_fit_field(frame, 'position_long')
                 position = None
                 if lat is not None and lon is not None:
-                    position = (_semicircles_to_degrees(lat), _semicircles_to_degrees(lon))
+                    position = (
+                        _semicircles_to_degrees(lat),
+                        _semicircles_to_degrees(lon),
+                    )
                 records.append((timestamp, speed, position))
                 if lat is None or lon is None:
                     continue
@@ -107,11 +123,13 @@ def parse_fit_file(file_obj):
                 if elevation is None:
                     elevation = _get_fit_field(frame, 'altitude') or 0.0
 
-                gps_points.append([
-                    round(_semicircles_to_degrees(lon), 7),
-                    round(_semicircles_to_degrees(lat), 7),
-                    round(float(elevation), 1),
-                ])
+                gps_points.append(
+                    [
+                        round(_semicircles_to_degrees(lon), 7),
+                        round(_semicircles_to_degrees(lat), 7),
+                        round(float(elevation), 1),
+                    ]
+                )
 
             elif frame.name == 'session':
                 elapsed = _get_fit_field(frame, 'total_elapsed_time') or 0
@@ -122,26 +140,40 @@ def parse_fit_file(file_obj):
                     max_speed = 0
 
                 session_stats = {
-                    'distance_km': round((_get_fit_field(frame, 'total_distance') or 0) / 1000, 3),
+                    'distance_km': round(
+                        (_get_fit_field(frame, 'total_distance') or 0) / 1000, 3
+                    ),
                     'elevation_gain_m': int(_get_fit_field(frame, 'total_ascent') or 0),
-                    'elevation_loss_m': int(_get_fit_field(frame, 'total_descent') or 0),
+                    'elevation_loss_m': int(
+                        _get_fit_field(frame, 'total_descent') or 0
+                    ),
                     'elapsed_time_s': round(float(elapsed), 1),
                     'moving_time_s': round(float(moving), 1),
                     'calories': int(_get_fit_field(frame, 'total_calories') or 0),
-                    'avg_speed_kmh': round((_get_fit_field(frame, 'avg_speed') or 0) * 3.6, 2),
+                    'avg_speed_kmh': round(
+                        (_get_fit_field(frame, 'avg_speed') or 0) * 3.6, 2
+                    ),
                     'max_speed_kmh': round(float(max_speed) * 3.6, 2),
                     'activity_dates': [],
                 }
 
     if session_stats is None:
         session_stats = {
-            'distance_km': 0, 'elevation_gain_m': 0, 'elevation_loss_m': 0,
-            'elapsed_time_s': 0, 'moving_time_s': 0, 'calories': 0,
-            'avg_speed_kmh': 0, 'max_speed_kmh': 0,
+            'distance_km': 0,
+            'elevation_gain_m': 0,
+            'elevation_loss_m': 0,
+            'elapsed_time_s': 0,
+            'moving_time_s': 0,
+            'calories': 0,
+            'avg_speed_kmh': 0,
+            'max_speed_kmh': 0,
             'activity_dates': [],
         }
 
     session_stats['activity_dates'] = _fit_activity_dates(records)
+    timestamps = [record[0].date().isoformat() for record in records if record[0]]
+    session_stats['date_start'] = min(timestamps, default=None)
+    session_stats['date_end'] = max(timestamps, default=None)
 
     return {'stats': session_stats, 'gps_points': gps_points}
 
@@ -163,11 +195,36 @@ def parse_gpx_file(file_obj):
     for track in gpx.tracks:
         for segment in track.segments:
             for point in segment.points:
-                gps_points.append([
-                    round(point.longitude, 7),
-                    round(point.latitude, 7),
-                    round(float(point.elevation or 0), 1),
-                ])
+                gps_points.append(
+                    [
+                        round(point.longitude, 7),
+                        round(point.latitude, 7),
+                        round(float(point.elevation or 0), 1),
+                    ]
+                )
+
+    timestamps = [
+        point.time.date().isoformat()
+        for track in gpx.tracks
+        for segment in track.segments
+        for point in segment.points
+        if point.time
+    ]
+    features = [
+        build_geojson_linestring(
+            [
+                [
+                    round(p.longitude, 7),
+                    round(p.latitude, 7),
+                    round(float(p.elevation or 0), 1),
+                ]
+                for p in segment.points
+            ]
+        )
+        for track in gpx.tracks
+        for segment in track.segments
+        if len(segment.points) >= 2
+    ]
 
     moving_data = gpx.get_moving_data()
     uphill_downhill = gpx.get_uphill_downhill()
@@ -196,8 +253,11 @@ def parse_gpx_file(file_obj):
             'avg_speed_kmh': avg_speed_kmh,
             'max_speed_kmh': 0.0,
             'activity_dates': _gpx_activity_dates(gpx),
+            'date_start': min(timestamps, default=None),
+            'date_end': max(timestamps, default=None),
         },
         'gps_points': gps_points,
+        'features': features,
     }
 
 
@@ -221,35 +281,46 @@ def merge_geojson_features(features):
     }
 
 
-def create_route(activity_file, result):
-    """Persist processed geometry outside the page and its revisions."""
-    from adventures.models import Route
+def parse_route_file(file):
+    """Validate an upload before the admin saves any changes."""
+    file.open('rb')
+    try:
+        file.seek(0)
+        result = (
+            parse_fit_file(file)
+            if file.name.lower().endswith('.fit')
+            else parse_gpx_file(file)
+        )
+        points = result['gps_points']
+        if any(
+            not all(math.isfinite(value) for value in point)
+            or not -180 <= point[0] <= 180
+            or not -90 <= point[1] <= 90
+            for point in points
+        ):
+            raise ValueError('The recording contains invalid GPS coordinates.')
+        if len(points) < 2:
+            raise ValueError('The recording has fewer than two GPS points.')
+        return result
+    finally:
+        file.seek(0)
 
+
+def apply_route_result(route, result):
     points = result['gps_points']
-    stats = result['stats']
-    route = Route(
-        name=activity_file.file.name.rsplit('/', 1)[-1][:255],
-        distance_km=stats.get('distance_km'),
-        elevation_gain_m=stats.get('elevation_gain_m'),
-        min_longitude=min((point[0] for point in points), default=None),
-        min_latitude=min((point[1] for point in points), default=None),
-        max_longitude=max((point[0] for point in points), default=None),
-        max_latitude=max((point[1] for point in points), default=None),
+    route.parsed_stats = result['stats']
+    route.min_longitude = min(point[0] for point in points)
+    route.min_latitude = min(point[1] for point in points)
+    route.max_longitude = max(point[0] for point in points)
+    route.max_latitude = max(point[1] for point in points)
+    payload = merge_geojson_features(
+        result.get('features') or [build_geojson_linestring(points)]
     )
-    feature = build_geojson_linestring(points)
-    payload = merge_geojson_features([feature])
-    filename = f'{uuid.uuid4().hex}.geojson'
     route.geojson_file.save(
-        filename,
+        f'{uuid.uuid4().hex}.geojson',
         ContentFile(json.dumps(payload, separators=(',', ':')).encode('utf-8')),
         save=False,
     )
-    try:
-        route.save()
-    except Exception:
-        route.geojson_file.delete(save=False)
-        raise
-    return route
 
 
 def aggregate_stats(stats_list):
@@ -272,7 +343,8 @@ def aggregate_stats(stats_list):
     # Old parsed stats have no activity_dates until they are explicitly reparsed.
     # Suppress daily averages if any moving time or distance lacks a day count.
     complete_dates = all(
-        not (stats.get('moving_time_s') or stats.get('distance_km')) or stats.get('activity_dates')
+        not (stats.get('moving_time_s') or stats.get('distance_km'))
+        or stats.get('activity_dates')
         for stats in stats_list
     )
     active_dates = set()
@@ -291,71 +363,10 @@ def aggregate_stats(stats_list):
         'avg_speed_kmh': avg_speed,
         'max_speed_kmh': round(float(max_speed), 2),
         'active_days': active_days,
-        'avg_hours_per_active_day': round(total_moving_time / 3600 / active_days, 1) if active_days else None,
-        'avg_distance_km_per_active_day': round(total_distance_km / active_days, 1) if active_days else None,
+        'avg_hours_per_active_day': round(total_moving_time / 3600 / active_days, 1)
+        if active_days
+        else None,
+        'avg_distance_km_per_active_day': round(total_distance_km / active_days, 1)
+        if active_days
+        else None,
     }
-
-
-def process_adventure_files(adventure_page):
-    """
-    Process all activity files for an AdventurePage.
-
-    - Parses files without a Route and new/replaced files.
-    - Aggregates stats across all files.
-    - Keeps route geometry outside page revisions.
-    """
-    from django.utils import timezone
-    from adventures.models import ActivityFile, AdventurePage as AP
-
-    all_stats = []
-    source_file_ids = []
-
-    for activity_file in adventure_page.activity_files.all().order_by('sort_order'):
-        source_file_ids.append(activity_file.pk)
-        if (activity_file.route_id is None or activity_file.processed_at is None
-                or activity_file.parsed_stats is None
-                or 'activity_dates' not in activity_file.parsed_stats):
-            with activity_file.file.open('rb') as f:
-                raw = f.read()
-
-            if activity_file.file_type == 'fit':
-                result = parse_fit_file(io.BytesIO(raw))
-            else:
-                result = parse_gpx_file(io.BytesIO(raw))
-
-            route = create_route(activity_file, result)
-
-            ActivityFile.objects.filter(pk=activity_file.pk).update(
-                parsed_stats=result['stats'],
-                route=route,
-                processed_at=timezone.now(),
-            )
-            activity_file.parsed_stats = result['stats']
-            activity_file.route = route
-
-        if activity_file.parsed_stats:
-            all_stats.append(activity_file.parsed_stats)
-
-    aggregated = aggregate_stats(all_stats) if all_stats else None
-    if aggregated is not None:
-        aggregated['source_file_ids'] = sorted(source_file_ids)
-    AP.objects.filter(pk=adventure_page.pk).update(computed_stats=aggregated)
-
-    # Keep the latest revision's draft text and fields, while updating the
-    # processed state of any matching inline files. A fresh revision prevents
-    # the editor from restoring stale unprocessed children on its next save.
-    fresh = AP.objects.get(pk=adventure_page.pk)
-    latest = fresh.get_latest_revision_as_object()
-    processed_files = {item.pk: item for item in fresh.activity_files.all()}
-    revision_files = list(latest.activity_files.all())
-    for item in revision_files:
-        processed = processed_files.get(item.pk)
-        if processed and item.file.name == processed.file.name:
-            item.route_id = processed.route_id
-            item.parsed_stats = processed.parsed_stats
-            item.processed_at = processed.processed_at
-    if {(item.pk, item.file.name) for item in revision_files} == {
-        (item.pk, item.file.name) for item in processed_files.values()
-    }:
-        latest.computed_stats = aggregated
-    latest.save_revision(clean=False)

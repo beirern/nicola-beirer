@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load wagtailcore_tags wagtailimages_tags %}
+{% load wagtailcore_tags static %}
 
 {% block title %}Nicola Beirer{% endblock %}
 
@@ -8,6 +8,42 @@
   <h1 class="font-serif text-4xl font-semibold mb-4">Nicola Beirer</h1>
   <p class="text-[#4a4033] text-lg">My Corner of the Internet</p>
 </section>
+
+{% if map_routes %}
+<section class="mb-14" aria-labelledby="routes-heading">
+  <div class="border-t border-[#e3d5bc] pt-5 mb-4">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+      <h2 id="routes-heading" class="font-serif text-xl font-semibold">Routes on the map</h2>
+      <div class="flex flex-wrap items-center gap-4">
+        {% include "adventures/includes/unit_toggle.html" %}
+        <a href="/adventures/" class="text-accent text-sm hover:text-[#7c3c1f]">see all adventures →</a>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap gap-2" role="group" aria-label="Filter routes by activity">
+        <button type="button" class="route-filter" data-route-filter="all" aria-pressed="true">All routes</button>
+        {% for activity in activity_filters %}
+        <button type="button" class="route-filter" data-route-filter="{{ activity.value }}" data-route-color="{{ activity.color }}" aria-pressed="false"><span aria-hidden="true" style="color:{{ activity.color }}">●</span> {{ activity.label }}</button>
+        {% endfor %}
+      </div>
+      <button type="button" class="route-reset" data-reset-map disabled>Reset map view</button>
+    </div>
+  </div>
+  <div id="routes-map" data-carto-key="{{ carto_api_key }}" role="region" aria-label="Map of adventure routes" aria-describedby="routes-map-status"></div>
+  <p id="routes-map-status" class="text-sm text-[#8a7a5f] mt-2 mb-4" role="status">Explore the routes below. The interactive map loads as you scroll here.</p>
+  <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-64 overflow-y-auto" aria-label="Routes">
+    {% for route in map_routes %}
+    <li data-route-item data-modes="{{ route.activity_types|join:' ' }}" class="border border-[#e3d5bc] rounded p-3">
+      <button type="button" data-select-route="{{ route.id }}" aria-pressed="false" class="route-select text-left font-semibold text-sm">{{ route.name }}</button>
+      <p class="text-xs text-[#8a7a5f]">{{ route.activity_label }}{% if route.is_group %} · {{ route.leg_count }} legs{% endif %}{% if route.date_start %} · {{ route.date_start|date:"M j, Y" }}{% endif %}{% if route.distance_km != None %} · <span data-distance-km="{{ route.distance_km }}">{{ route.distance_km|floatformat:1 }} km</span>{% endif %}</p>
+      {% if route.description %}<p class="text-sm text-[#4a4033] mt-1">{{ route.description }}</p>{% endif %}
+      {% for story in route.stories %}<a href="{{ story.url }}" class="block text-sm text-accent mt-1">Read the story: {{ story.title }} →</a>{% endfor %}
+    </li>
+    {% endfor %}
+  </ul>
+  {{ map_routes|json_script:"map-routes" }}
+</section>
+{% endif %}
 
 <section class="mb-14">
   <div class="flex items-baseline justify-between border-t border-[#e3d5bc] pt-5 mb-6">
@@ -27,69 +63,6 @@
     </article>
     {% empty %}
     <p class="text-[#8a7a5f] text-sm">No posts yet.</p>
-    {% endfor %}
-  </div>
-</section>
-
-<section class="mb-14">
-  <div class="flex items-start justify-between border-t border-[#e3d5bc] pt-5 mb-6 gap-4">
-    <h2 class="font-serif text-xl font-semibold">Latest from Adventures</h2>
-    <div class="flex flex-wrap justify-end items-center gap-4">
-      {% include "adventures/includes/unit_toggle.html" %}
-      <a href="/adventures/" class="text-accent text-sm hover:text-[#7c3c1f]">see all →</a>
-    </div>
-  </div>
-  <div class="flex flex-col gap-6">
-    {% for adventure in recent_adventures %}
-    <article class="flex gap-5">
-      {% if adventure.header_image %}
-      {% image adventure.header_image fill-160x120 as thumb %}
-      <img src="{{ thumb.url }}" alt="{{ adventure.title }}" class="w-40 h-[120px] object-cover shrink-0">
-      {% endif %}
-      <div>
-        <p class="text-[#8a7a5f] text-xs mb-1">{{ adventure.activity_type }} &middot; {{ adventure.date_display }}</p>
-        <h3 class="font-serif text-lg font-semibold mb-1">
-          <a href="{% pageurl adventure %}" class="hover:text-accent transition-colors">{{ adventure.title }}</a>
-        </h3>
-        {% if adventure.intro %}
-        <p class="text-[#4a4033] text-sm mb-2">{{ adventure.intro }}</p>
-        {% endif %}
-        <p class="text-[#8a7a5f] text-sm">
-          {% if adventure.location %}{{ adventure.location }}{% endif %}
-          {% if adventure.effective_distance_km %} &middot; <span data-distance-km="{{ adventure.effective_distance_km }}">{{ adventure.effective_distance_km }} km</span>{% endif %}
-          {% if adventure.effective_elevation_gain_m %} &middot; <span data-elevation-m="{{ adventure.effective_elevation_gain_m }}" data-prefix="+">+{{ adventure.effective_elevation_gain_m }} m</span>{% endif %}
-        </p>
-      </div>
-    </article>
-    {% empty %}
-    <p class="text-[#8a7a5f] text-sm">No adventures logged yet.</p>
-    {% endfor %}
-  </div>
-</section>
-
-<section class="mb-14">
-  <div class="flex items-baseline justify-between border-t border-[#e3d5bc] pt-5 mb-6">
-    <h2 class="font-serif text-xl font-semibold">From the Gallery</h2>
-    <a href="/gallery/" class="text-accent text-sm hover:text-[#7c3c1f]">see all →</a>
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    {% for album in recent_albums %}
-    <a href="{% pageurl album %}" class="block group">
-      {% if album.cover_image %}
-      {% image album.cover_image fill-400x300 as cover %}
-      <img src="{{ cover.url }}" alt="{{ album.title }}" class="w-full h-40 object-cover">
-      {% else %}
-      <div class="w-full h-40 bg-[#efe4cd] flex items-center justify-center">
-        <span class="text-[#8a7a5f] text-sm">no cover</span>
-      </div>
-      {% endif %}
-      <div class="pt-3">
-        <h3 class="text-sm font-semibold group-hover:text-accent transition-colors mb-1">{{ album.title }}</h3>
-        <p class="text-xs text-[#8a7a5f]">{{ album.date|date:"M Y" }} &middot; {{ album.photo_count }} photo{{ album.photo_count|pluralize }}</p>
-      </div>
-    </a>
-    {% empty %}
-    <p class="text-[#8a7a5f] text-sm">No albums yet.</p>
     {% endfor %}
   </div>
 </section>
@@ -125,4 +98,27 @@
   </div>
 </section>
 
+{% endblock %}
+
+{% block extra_css %}
+{% if map_routes %}
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css">
+<style>
+  #routes-map { height: clamp(300px, 50vw, 440px); border: 1px solid #e3d5bc; border-radius: 4px; background: #efe4cd; }
+  .maplibregl-map { font-family: inherit; }
+  .maplibregl-popup-content { color: #2b241d; padding: 16px; line-height: 1.5; max-height: 220px; overflow-y: auto; }
+  .maplibregl-popup-content p { margin-top: 6px; }
+  .maplibregl-popup-content a { color: #a8532e; margin-top: 8px; }
+  .route-filter, .route-reset { padding: 5px 12px; border: 1px solid #e3d5bc; border-radius: 4px; font-size: 14px; }
+  .route-filter[aria-pressed="true"] { background: #efe4cd; border-color: #8a7a5f; }
+  .route-reset:disabled { opacity: 0.5; cursor: not-allowed; }
+  .route-select[aria-pressed="true"] { color: #a8532e; text-decoration: underline; }
+  [data-route-item][hidden] { display: none; }
+  .route-filter:focus-visible, .route-reset:focus-visible, .route-select:focus-visible { outline: 2px solid #a8532e; outline-offset: 3px; }
+</style>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if map_routes %}<script type="module" src="{% static 'adventures/route-map.js' %}"></script>{% endif %}
 {% endblock %}

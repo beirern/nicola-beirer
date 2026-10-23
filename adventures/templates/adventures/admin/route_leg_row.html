@@ -1,0 +1,18 @@
+<fieldset data-leg-row class="w-mt-4 w-mb-6" style="border:1px solid var(--w-color-border-furniture);padding:16px">
+  <legend>Leg <span data-leg-number>{{ forloop.counter }}</span></legend>
+  {{ leg.non_field_errors }}
+  {{ leg.ORDER }}
+  <p class="w-mb-4">{{ leg.route.label_tag }} {{ leg.route }} {{ leg.route.errors }}</p>
+  <details {% if leg.file.errors or leg.name.errors or leg.activity_type.errors or leg.file.value %}open{% endif %}>
+    <summary>Or upload a new recording</summary>
+    <p class="w-mt-4 w-mb-4">{{ leg.name.label_tag }} {{ leg.name }} {{ leg.name.errors }}</p>
+    <p class="w-mb-4">{{ leg.description.label_tag }} {{ leg.description }} {{ leg.description.errors }}</p>
+    <p class="w-mb-4">{{ leg.activity_type.label_tag }} {{ leg.activity_type }} {{ leg.activity_type.errors }}</p>
+    <p class="w-mb-4">{{ leg.file.label_tag }} {{ leg.file }} {{ leg.file.errors }}</p>
+  </details>
+  <p class="w-mt-4">{{ leg.DELETE }} <label for="{{ leg.DELETE.id_for_label }}">Detach this leg when saved</label></p>
+  <div class="w-mt-4">
+    <button type="button" class="button button-secondary button-small" data-leg-up aria-label="Move leg up">↑</button>
+    <button type="button" class="button button-secondary button-small" data-leg-down aria-label="Move leg down">↓</button>
+  </div>
+</fieldset>

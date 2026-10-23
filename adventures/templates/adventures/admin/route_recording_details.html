@@ -1,0 +1,16 @@
+<section aria-label="Recording details" class="w-mt-6 w-mb-6">
+  {% if self.instance.parent_route_id %}
+  <p class="w-mb-4">Part of: <a href="{% url 'wagtailsnippets_adventures_route:edit' self.instance.parent_route_id %}">{{ self.instance.parent_route.name }}</a>. Detach this leg in the parent’s editor to move it to another group.</p>
+  {% endif %}
+  {% if self.instance.pk %}
+  <p class="w-mb-4">{{ self.instance.processing_status }}</p>
+  <dl>
+    <dt>Start date</dt><dd class="w-mb-3">{{ self.instance.date_start|date:"M j, Y"|default:"—" }}</dd>
+    <dt>End date</dt><dd class="w-mb-3">{{ self.instance.date_end|date:"M j, Y"|default:"—" }}</dd>
+    <dt>Distance</dt><dd class="w-mb-3">{% if self.instance.distance_km != None %}{{ self.instance.distance_km|floatformat:2 }} km{% else %}—{% endif %}</dd>
+    <dt>Elevation gain</dt><dd>{% if self.instance.elevation_gain_m != None %}{{ self.instance.elevation_gain_m }} m{% else %}—{% endif %}</dd>
+  </dl>
+  {% else %}
+  <p>Save a recording to calculate its dates, distance, and elevation.</p>
+  {% endif %}
+</section>

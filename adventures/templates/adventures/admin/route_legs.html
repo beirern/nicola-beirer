@@ -1,0 +1,13 @@
+<section class="route-group-fields" data-route-legs {% if self.form.route_kind != 'group' %}hidden{% endif %}>
+  <h2 class="w-font-bold w-mb-4">Legs</h2>
+  <p class="w-mb-4">Choose existing ungrouped recordings, or upload new legs. Use the arrows to set their order. Removing a leg detaches it without deleting its recording.</p>
+  {{ self.form.legs.management_form }}
+  {{ self.form.legs.non_form_errors }}
+  <div data-leg-rows>
+    {% for leg in self.form.legs %}
+      {% include 'adventures/admin/route_leg_row.html' with leg=leg %}
+    {% endfor %}
+  </div>
+  <template data-leg-template>{% include 'adventures/admin/route_leg_row.html' with leg=self.form.legs.empty_form %}</template>
+  <button type="button" class="button button-secondary w-mt-4" data-add-leg>Add a leg</button>
+</section>
