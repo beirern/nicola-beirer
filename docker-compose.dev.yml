@@ -1,0 +1,21 @@
+services:
+  web:
+    image: nicola-beirer:dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      DEBUG: "True"
+      POSTGRES_HOST: db
+    volumes:
+      - .:/app
+      - media_data:/app/media
+    command:
+      - sh
+      - -c
+      - |
+        python manage.py migrate --noinput &&
+        exec python manage.py runserver 0.0.0.0:8000
+
+volumes:
+  media_data:
