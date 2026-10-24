@@ -122,8 +122,8 @@ function routeProgress(stop) {
   return best;
 }
 
-function orderedStops() {
-  return visibleWaypoints().sort((a, b) => a.route_id - b.route_id || routeProgress(a) - routeProgress(b));
+function orderedStops(routeId) {
+  return visibleWaypoints().filter(stop => stop.route_id === routeId).sort((a, b) => a.route_id - b.route_id || routeProgress(a) - routeProgress(b));
 }
 
 function fitFeatures(features, padding = 35, maxZoom = 12, duration = 0) {
@@ -226,10 +226,9 @@ function renderDeck() {
   deck.querySelector('[data-deck-caption]').textContent = photo.caption;
   const previous = deck.querySelector('[data-deck-prev]');
   const next = deck.querySelector('[data-deck-next]');
-  previous.disabled = photoIndex === 0;
-  next.disabled = photoIndex === activePhotos.length - 1;
-  previous.querySelector('img').src = (activePhotos[photoIndex - 1] || photo).url;
-  next.querySelector('img').src = (activePhotos[photoIndex + 1] || photo).url;
+  previous.disabled = next.disabled = activePhotos.length < 2;
+  previous.querySelector('img').src = activePhotos[(photoIndex - 1 + activePhotos.length) % activePhotos.length].url;
+  next.querySelector('img').src = activePhotos[(photoIndex + 1) % activePhotos.length].url;
   renderStrip();
 }
 
@@ -273,7 +272,7 @@ async function openDeck(stop, marker) {
     photoIndex = 0;
     if (!activePhotos.length) throw new Error('Photo stop has no photos');
     const wasOpen = !deck.hidden;
-    deckStops = orderedStops();
+    deckStops = orderedStops(stop.route_id);
     if (!deckStops.some(item => item.id === stop.id)) deckStops.push(stop);
     deck.hidden = false;
     renderDeck();
@@ -286,9 +285,7 @@ async function openDeck(stop, marker) {
 
 function stepPhoto(delta) {
   if (!activePhotos.length) return;
-  const next = Math.max(0, Math.min(activePhotos.length - 1, photoIndex + delta));
-  if (next === photoIndex) return;
-  photoIndex = next;
+  photoIndex = (photoIndex + delta + activePhotos.length) % activePhotos.length;
   renderDeck();
 }
 
