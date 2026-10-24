@@ -35,6 +35,17 @@ Configuration is via `.env` file (database, AWS credentials, Django secret key).
 The test suite runs with `python manage.py test` in the dev container or with
 the host command above.
 
+## Commits and Releases
+
+Use Conventional Commits: `type(scope): short description` (the scope is
+optional). For example, `feat(map): add route filters` or
+`perf(map): cache route overviews`.
+
+Semantic Release runs on pushes to `main`. Per `.releaserc.json`, `feat` makes
+a minor release, `fix` and `perf` make patch releases, and a breaking change
+makes a major release. Other commit messages currently fall back to a patch
+release; use an accurate type so the release level and notes reflect the change.
+
 ## Architecture Overview
 
 Personal portfolio app built on **Django 6 + Wagtail CMS**. PostgreSQL 18 for data, AWS S3 for media in production (falls back to filesystem if no bucket configured), WhiteNoise with Brotli for static files.
