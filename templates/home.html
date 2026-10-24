@@ -30,8 +30,12 @@
     </div>
   </div>
   <div class="routes-map-shell">
-    <div id="routes-map" data-carto-key="{{ carto_api_key }}" role="region" aria-label="Map of adventure routes and photo stops" aria-describedby="routes-map-status"></div>
-    <div id="waypoint-deck" class="waypoint-deck" role="dialog" aria-modal="true" aria-label="Photo stop" hidden>
+    <div id="routes-map" data-carto-key="{{ carto_api_key }}" role="region" aria-label="Map of adventure routes and photo points of interest" aria-describedby="routes-map-status"></div>
+    <aside id="waypoint-list" class="waypoint-list" aria-label="Points of interest in this area" hidden>
+      <div class="waypoint-list-header"><strong data-list-title></strong><button type="button" data-list-close aria-label="Close list">×</button></div>
+      <div class="waypoint-list-body" data-list-body></div>
+    </aside>
+    <div id="waypoint-deck" class="waypoint-deck" role="dialog" aria-modal="true" aria-label="Photo point of interest" hidden>
       <div class="waypoint-deck-scrim"></div>
       <div class="waypoint-deck-header"><div><strong data-deck-name></strong><span data-deck-count></span></div><button type="button" data-deck-close aria-label="Close photo deck">×</button></div>
       <div class="waypoint-deck-stage">
@@ -39,7 +43,7 @@
         <figure class="waypoint-main-card"><img data-deck-image alt=""><figcaption data-deck-caption></figcaption></figure>
         <button type="button" class="waypoint-side-card" data-deck-next aria-label="Next photo"><img alt=""></button>
       </div>
-      <nav class="waypoint-deck-strip" data-deck-strip aria-label="Photo stops along the route" hidden></nav>
+      <nav class="waypoint-deck-strip" data-deck-strip aria-label="Points of interest along the route" hidden></nav>
     </div>
   </div>
   <p id="routes-map-status" class="text-sm text-[#8a7a5f] mt-2 mb-4" role="status">Explore the routes below. The interactive map loads as you scroll here.</p>
@@ -141,6 +145,27 @@
   .waypoint-level-0.waypoint-merged .waypoint-preview-count { left: auto; }
   .waypoint-preview-button:hover .waypoint-preview-card-0, .waypoint-preview-button:focus-visible .waypoint-preview-card-0 { transform: translateY(-5px); }
   @media (prefers-reduced-motion: reduce) { .waypoint-preview-card { transition: none; } }
+  .waypoint-numbered { --w: 0px; --h: 0px; width: 44px; height: 44px; }
+  .waypoint-numbered .waypoint-preview-stack, .waypoint-numbered .waypoint-stem, .waypoint-numbered .waypoint-dot-core { display: none; }
+  .waypoint-numbered .waypoint-preview-count { left: 8px; bottom: 8px; width: 28px; height: 28px; padding: 0; border-width: 3px; font-size: 13px; background: var(--poi-color, #a8532e); transition: transform 120ms ease; }
+  .waypoint-numbered.waypoint-highlight { z-index: 5; }
+  .waypoint-numbered.waypoint-highlight .waypoint-preview-count { transform: scale(1.35); outline: 3px solid #3d5680; outline-offset: 2px; }
+  .waypoint-list { position: absolute; z-index: 4; top: 0; right: 0; bottom: 0; width: 240px; display: flex; flex-direction: column; background: #fffaf0; box-shadow: -6px 0 18px #211d1940; }
+  .waypoint-list[hidden] { display: none; }
+  .waypoint-list-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 8px 6px 14px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #a8532e; }
+  .waypoint-list-header button { width: 44px; height: 44px; border: 0; background: transparent; color: #2b241d; font-size: 24px; cursor: pointer; }
+  .waypoint-list-body { flex: 1; overflow-y: auto; }
+  .waypoint-list-body h3 { margin: 0; padding: 8px 14px 4px; font-size: 12px; font-weight: 700; color: #4a4033; border-top: 1px solid #efe6d3; }
+  .waypoint-list-body h3::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; background: var(--poi-color, #a8532e); }
+  .waypoint-list-row { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 48px; padding: 5px 14px; border: 0; border-top: 1px solid #efe6d3; background: transparent; text-align: left; cursor: pointer; }
+  .waypoint-list-row:hover, .waypoint-list-row:focus-visible { background: #f1e6d0; }
+  .waypoint-list-number { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--poi-color, #a8532e); color: #fffaf0; font-size: 11px; font-weight: 700; }
+  .waypoint-list-row img { flex: none; width: 34px; height: 34px; border-radius: 3px; object-fit: cover; }
+  .waypoint-list-text { min-width: 0; display: flex; flex-direction: column; }
+  .waypoint-list-text strong { font-size: 13px; color: #2b241d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .waypoint-list-text small { font-size: 11px; color: #5a5148; }
+  .waypoint-list button:focus-visible { outline: 3px solid #211d19; outline-offset: -3px; }
+  @media (max-width: 600px) { .waypoint-list { top: auto; left: 0; width: auto; height: 50%; box-shadow: 0 -6px 18px #211d1940; } }
   .waypoint-deck { position: absolute; inset: 0; z-index: 5; color: #fffaf0; }
   .waypoint-deck[hidden] { display: none; }
   .waypoint-deck-scrim { position: absolute; inset: 0; background: #211d19c9; }
@@ -151,7 +176,7 @@
   .waypoint-deck-stage { position: absolute; z-index: 1; inset: 58px 6% 15px; display: flex; align-items: center; justify-content: center; gap: 10px; }
   .waypoint-main-card { height: 100%; width: min(60%, 430px); min-width: 0; margin: 0; padding: 5px; background: #fffaf0; color: #2b241d; box-shadow: 0 8px 25px #0008; display: flex; flex-direction: column; border-radius: 4px; }
   .waypoint-main-card img { width: 100%; min-height: 0; flex: 1; object-fit: contain; background: #e8ddcd; }
-  .waypoint-main-card figcaption { min-height: 28px; padding: 5px 7px; font-size: 13px; }
+  .waypoint-main-card figcaption { min-height: 28px; padding: 7px 8px 3px; font-size: 14px; text-align: center; }
   .waypoint-side-card { width: min(19%, 130px); height: 65%; padding: 4px; border: 0; border-radius: 4px; background: #fffaf0; box-shadow: 0 5px 15px #0008; cursor: pointer; }
   .waypoint-side-card img { width: 100%; height: 100%; object-fit: cover; }
   .waypoint-side-card:disabled { opacity: .25; cursor: default; }

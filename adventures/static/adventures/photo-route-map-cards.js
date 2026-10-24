@@ -16,6 +16,8 @@ const loaded = new Map();
 const LEVEL_ZOOM = [4, 7, 10];
 const LEVEL_MERGE_PX = [64, 88, 124, 164];
 let deckStops = [];
+let listIds, listNumbers = new Map(), listOpener;
+const list = document.getElementById('waypoint-list');
 const buttons = [...document.querySelectorAll('[data-select-route]')];
 const resetButton = document.querySelector('[data-reset-map]');
 const motionDuration = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 850;
@@ -41,12 +43,15 @@ function updateMarkers() {
   if (!map || !markers.size) return;
   const level = markerLevel();
   const stops = visibleWaypoints();
-  const points = stops.map(stop => ({stop, point: map.project(stop.coordinates)}));
+  const pinned = stops.filter(stop => listIds?.includes(stop.id));
+  const free = stops.filter(stop => !listIds?.includes(stop.id));
+  const points = free.map(stop => ({stop, point: map.project(stop.coordinates)}));
+  // POIs from different routes only merge when much closer, so nearby routes keep separate stacks.
+  const touches = (a, b) => Math.hypot(a.point.x - b.point.x, a.point.y - b.point.y) <
+    LEVEL_MERGE_PX[level] * (a.stop.route_id === b.stop.route_id ? 1 : 0.5);
   const groups = [];
   points.forEach(item => {
-    const touching = groups.filter(group => group.some(member =>
-      Math.hypot(member.point.x - item.point.x, member.point.y - item.point.y) < LEVEL_MERGE_PX[level]
-    ));
+    const touching = groups.filter(group => group.some(member => touches(member, item)));
     if (!touching.length) groups.push([item]);
     else {
       const first = touching[0];
@@ -58,7 +63,12 @@ function updateMarkers() {
     }
   });
   const visibleIds = new Set(stops.map(stop => stop.id));
-  markers.forEach(marker => { marker.getElement().hidden = !visibleIds.has(Number(marker.getElement().dataset.stopId)); });
+  markers.forEach(marker => {
+    const element = marker.getElement();
+    element.hidden = !visibleIds.has(Number(element.dataset.stopId));
+    element.classList.remove('waypoint-numbered', 'waypoint-highlight');
+    element.style.removeProperty('--poi-color');
+  });
   groups.forEach(group => {
     const lead = group[0].stop;
     const button = markers.get(lead.id).getElement();
@@ -70,13 +80,26 @@ function updateMarkers() {
     button.classList.toggle('waypoint-merged', merged);
     button.dataset.clusterIds = merged ? group.map(({stop}) => stop.id).join(',') : '';
     button.setAttribute('aria-label', merged
-      ? `${group.length} photo stops, ${total} photos; zoom in`
+      ? `${group.length} points of interest, ${total} photos; open the list`
       : `${lead.name}, ${lead.photo_count} ${lead.photo_count === 1 ? 'photo' : 'photos'}`);
-    button.querySelector('.waypoint-preview-count').textContent = merged && level > 0 ? `${group.length} stops` : String(total);
-    // A stop's cover is its first photo; merged stacks show each member's cover.
+    button.querySelector('.waypoint-preview-count').textContent = merged && level > 0 ? `${group.length} POIs` : String(total);
+    // A POI's cover is its first photo; merged stacks show each member's cover.
     const covers = merged ? group.map(({stop}) => stop.previews[0]) : lead.previews;
     renderPreview(button, covers.slice(0, 3));
     markers.get(lead.id).setOffset([0, 8]);
+  });
+  // POIs from an open list show as numbered dots matching the list.
+  pinned.forEach(stop => {
+    const button = markers.get(stop.id).getElement();
+    const route = routes.find(item => item.id === stop.route_id);
+    button.classList.remove('waypoint-level-0', 'waypoint-level-1', 'waypoint-level-2', 'waypoint-level-3', 'waypoint-merged');
+    button.classList.add('waypoint-preview-button', 'waypoint-numbered');
+    button.dataset.clusterIds = '';
+    button.style.setProperty('--poi-color', colors[route?.activity_type] || '#a8532e');
+    button.setAttribute('aria-label', `${listNumbers.get(stop.id)}. ${stop.name}, ${stop.photo_count} ${stop.photo_count === 1 ? 'photo' : 'photos'}`);
+    button.querySelector('.waypoint-preview-count').textContent = String(listNumbers.get(stop.id));
+    renderPreview(button, []);
+    markers.get(stop.id).setOffset([0, 22]);
   });
 }
 
@@ -98,17 +121,92 @@ function renderPreview(button, urls) {
   });
 }
 
-function zoomIntoGroup(button) {
-  const ids = button.dataset.clusterIds.split(',').map(Number);
-  const bounds = new maplibregl.LngLatBounds();
-  waypoints.filter(stop => ids.includes(stop.id)).forEach(stop => bounds.extend(stop.coordinates));
-  const before = map.getZoom();
-  map.fitBounds(bounds, {padding: 140, maxZoom: Math.min(before + 3, 17), duration: motionDuration()});
-  // Stops sharing (almost) one spot cannot separate; open the first one, the route strip reaches the rest.
-  if (before >= 16.5) openDeck(waypoints.find(stop => stop.id === ids[0]), button);
+function listPadding() {
+  const phone = window.matchMedia('(max-width: 600px)').matches;
+  return phone
+    ? {top: 50, left: 40, right: 40, bottom: Math.round(container.clientHeight * 0.5) + 30}
+    : {top: 60, bottom: 60, left: 60, right: 260};
 }
 
-// Order stops along their route so the deck's route strip reads start to finish.
+function openList(button) {
+  const ids = button.dataset.clusterIds.split(',').map(Number);
+  const members = waypoints.filter(stop => ids.includes(stop.id));
+  const sections = [...new Set(members.map(stop => stop.route_id))].sort((a, b) => a - b).map(routeId => ({
+    route: routes.find(route => route.id === routeId),
+    stops: members.filter(stop => stop.route_id === routeId).sort((a, b) => routeProgress(a) - routeProgress(b)),
+  }));
+  listIds = ids;
+  listOpener = button;
+  listNumbers = new Map(sections.flatMap(section => section.stops.map((stop, index) => [stop.id, index + 1])));
+  renderList(sections, members.length);
+  list.hidden = false;
+  const bounds = new maplibregl.LngLatBounds();
+  members.forEach(stop => bounds.extend(stop.coordinates));
+  map.fitBounds(bounds, {padding: listPadding(), maxZoom: 16, duration: motionDuration()});
+  updateMarkers();
+  list.querySelector('[data-list-close]').focus();
+}
+
+function renderList(sections, total) {
+  list.querySelector('[data-list-title]').textContent = `${total} points of interest`;
+  const body = list.querySelector('[data-list-body]');
+  body.replaceChildren();
+  sections.forEach(({route, stops}) => {
+    if (sections.length > 1 || route) {
+      const heading = document.createElement('h3');
+      heading.textContent = route?.name || 'Route';
+      heading.style.setProperty('--poi-color', colors[route?.activity_type] || '#a8532e');
+      body.append(heading);
+    }
+    stops.forEach(stop => {
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'waypoint-list-row';
+      row.style.setProperty('--poi-color', colors[route?.activity_type] || '#a8532e');
+      const number = document.createElement('span');
+      number.className = 'waypoint-list-number';
+      number.textContent = String(listNumbers.get(stop.id));
+      const cover = document.createElement('img');
+      cover.src = stop.previews[0];
+      cover.alt = '';
+      const text = document.createElement('span');
+      text.className = 'waypoint-list-text';
+      const name = document.createElement('strong');
+      name.textContent = stop.name;
+      const count = document.createElement('small');
+      count.textContent = `${stop.photo_count} ${stop.photo_count === 1 ? 'photo' : 'photos'}`;
+      text.append(name, count);
+      row.append(number, cover, text);
+      const marker = () => markers.get(stop.id)?.getElement();
+      const light = on => marker()?.classList.toggle('waypoint-highlight', on);
+      row.addEventListener('mouseenter', () => light(true));
+      row.addEventListener('mouseleave', () => light(false));
+      row.addEventListener('focus', () => light(true));
+      row.addEventListener('blur', () => light(false));
+      row.addEventListener('click', () => {
+        map.easeTo({center: stop.coordinates, duration: motionDuration()});
+        openDeck(stop, row);
+      });
+      body.append(row);
+    });
+  });
+}
+
+function closeList(restoreFocus = false) {
+  if (!listIds) return;
+  listIds = undefined;
+  listNumbers = new Map();
+  list.hidden = true;
+  updateMarkers();
+  if (restoreFocus && listOpener?.isConnected) listOpener.focus();
+}
+
+list.querySelector('[data-list-close]').addEventListener('click', () => closeList(true));
+list.addEventListener('keydown', event => {
+  if (event.key === 'Escape') { closeList(true); event.preventDefault(); }
+});
+
+// Order POIs along their route so the deck's route strip reads start to finish.
 const progressCache = new Map();
 function routeProgress(stop) {
   if (progressCache.has(stop.id)) return progressCache.get(stop.id);
@@ -137,6 +235,7 @@ function fitFeatures(features, padding = 35, maxZoom = 12, duration = 0) {
 function selectRoute(route) {
   if (!route) return;
   closeDeck(false);
+  closeList();
   selected = route.id;
   updateMarkers();
   buttons.forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.selectRoute) === selected)));
@@ -185,6 +284,7 @@ buttons.forEach(button => button.addEventListener('click', () => {
 
 resetButton.addEventListener('click', () => {
   closeDeck(false);
+  closeList();
   selected = undefined;
   updateMarkers();
   buttons.forEach(button => button.setAttribute('aria-pressed', 'false'));
@@ -196,6 +296,7 @@ resetButton.addEventListener('click', () => {
 
 document.querySelectorAll('[data-route-filter]').forEach(button => button.addEventListener('click', () => {
   closeDeck(false);
+  closeList();
   activeFilter = button.dataset.routeFilter;
   selected = undefined;
   updateMarkers();
@@ -219,11 +320,13 @@ function renderDeck() {
   deck.querySelector('[data-deck-name]').textContent = activeDeck.name;
   const stopNumber = deckStops.findIndex(stop => stop.id === activeDeck.id) + 1;
   deck.querySelector('[data-deck-count]').textContent =
-    `${stopNumber ? `Stop ${stopNumber} of ${deckStops.length} · ` : ''}${photoIndex + 1} of ${activePhotos.length} photos`;
+    `${stopNumber ? `POI ${stopNumber} of ${deckStops.length} · ` : ''}${photoIndex + 1} of ${activePhotos.length} photos`;
   const image = deck.querySelector('[data-deck-image]');
   image.src = photo.url;
   image.alt = photo.alt;
-  deck.querySelector('[data-deck-caption]').textContent = photo.caption;
+  const [year, month, day] = (photo.taken_on || '').split('-').map(Number);
+  const taken = photo.taken_on ? new Date(year, month - 1, day).toLocaleDateString(undefined, {year: 'numeric', month: 'short', day: 'numeric'}) : '';
+  deck.querySelector('[data-deck-caption]').textContent = [taken, photo.caption].filter(Boolean).join(' - ');
   const previous = deck.querySelector('[data-deck-prev]');
   const next = deck.querySelector('[data-deck-next]');
   previous.disabled = next.disabled = activePhotos.length < 2;
@@ -264,13 +367,13 @@ async function openDeck(stop, marker) {
   activeMarker = marker;
   try {
     const response = await fetch(stop.url);
-    if (!response.ok) throw new Error('Photo stop unavailable');
+    if (!response.ok) throw new Error('Point of interest unavailable');
     const details = await response.json();
     if (request !== deckRequest) return;
     activeDeck = stop;
     activePhotos = details.photos;
     photoIndex = 0;
-    if (!activePhotos.length) throw new Error('Photo stop has no photos');
+    if (!activePhotos.length) throw new Error('Point of interest has no photos');
     const wasOpen = !deck.hidden;
     deckStops = orderedStops(stop.route_id);
     if (!deckStops.some(item => item.id === stop.id)) deckStops.push(stop);
@@ -279,7 +382,7 @@ async function openDeck(stop, marker) {
     map.easeTo({center: stop.coordinates, duration: motionDuration()});
     (wasOpen && deck.querySelector('[aria-current="true"]') || deck.querySelector('[data-deck-close]')).focus();
   } catch (error) {
-    if (request === deckRequest) status.textContent = 'The photos for this stop could not load. Try again later.';
+    if (request === deckRequest) status.textContent = 'The photos for this point of interest could not load. Try again later.';
   }
 }
 
@@ -384,13 +487,14 @@ async function initialize() {
       button.append(stack, count, stem, dot);
       button.addEventListener('click', event => {
         event.stopPropagation();
-        if (button.dataset.clusterIds) zoomIntoGroup(button);
+        if (button.dataset.clusterIds) openList(button);
         else openDeck(stop, button);
       });
       markers.set(stop.id, new maplibregl.Marker({element: button, anchor: 'bottom', offset: [0, 8]}).setLngLat(stop.coordinates).addTo(map));
     });
     map.on('moveend', updateMarkers);
     map.on('resize', updateMarkers);
+    map.on('click', () => closeList());
     updateMarkers();
     resetButton.disabled = features.length === 0;
     ['route-hit-area'].forEach(layer => {
