@@ -1,11 +1,14 @@
+from datetime import date
+from hashlib import sha256
 import json
 import math
-from datetime import date
 
+from django.core.cache import caches
 from django.db.models import Q
-from django.http import FileResponse, Http404, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.utils.cache import get_conditional_response
 
 from adventures.models import AdventurePage, Route
 
@@ -32,13 +35,17 @@ def public_routes():
     ).distinct()
 
 
+def displayed_routes(visible):
+    visible_groups = visible.filter(kind=Route.Kind.GROUP).values('pk')
+    return visible.exclude(
+        kind=Route.Kind.RECORDING, parent_route_id__in=visible_groups
+    ).prefetch_related('children')
+
+
 def route_manifest(request):
     """List a visible group once, with links from its own and its legs' stories."""
     visible = public_routes()
-    visible_groups = visible.filter(kind=Route.Kind.GROUP).values('pk')
-    display = visible.exclude(
-        kind=Route.Kind.RECORDING, parent_route_id__in=visible_groups
-    ).prefetch_related('children')
+    display = displayed_routes(visible)
     stories = (
         AdventurePage.objects.live()
         .public()
@@ -121,6 +128,25 @@ def route_geojson(request, route_id):
         Route.objects.all() if can_preview else public_routes(), pk=route_id
     )
     overview = request.GET.get('overview') == '1'
+    recordings = route.recordings
+    etag = None
+    cache_key = None
+    if overview and not can_preview:
+        fingerprint = json.dumps(
+            [
+                (leg.pk, leg.position, leg.geojson_file.name, leg.activity_type)
+                for leg in recordings
+            ],
+            separators=(',', ':'),
+        )
+        version = sha256(f'overview-v1:{route.pk}:{fingerprint}'.encode()).hexdigest()
+        etag = f'"{version}"'
+        cache_key = f'route-overview:v1:{version}'
+        conditional = get_conditional_response(request, etag=etag)
+        if conditional is not None:
+            conditional['ETag'] = etag
+            conditional['Cache-Control'] = 'public, max-age=0, must-revalidate'
+            return conditional
     if route.kind == Route.Kind.RECORDING and not overview:
         if not route.geojson_file:
             raise Http404
@@ -131,36 +157,44 @@ def route_geojson(request, route_id):
         except FileNotFoundError as exc:
             raise Http404 from exc
     else:
-        features = []
-        for recording in route.recordings:
-            if not recording.geojson_file:
-                continue
-            try:
-                with recording.geojson_file.open('rb') as source:
-                    payload = json.load(source)
-            except FileNotFoundError as exc:
-                raise Http404 from exc
-            for feature in payload['features']:
-                feature['properties'] = {
-                    **feature.get('properties', {}),
-                    'route_id': route.pk,
-                    'child_route_id': recording.pk,
-                    'activity_type': recording.activity_type,
-                }
-                if overview:
-                    coords = feature['geometry']['coordinates']
-                    stride = max(1, math.ceil(len(coords) / 1500))
-                    simplified = [point[:2] for point in coords[::stride]]
-                    if coords and simplified[-1] != coords[-1][:2]:
-                        simplified.append(coords[-1][:2])
-                    feature['geometry']['coordinates'] = simplified
-                features.append(feature)
-        if not features:
-            raise Http404
-        response = JsonResponse(
-            {'type': 'FeatureCollection', 'features': features},
-            content_type='application/geo+json',
-        )
+        cached_body = caches['route_overviews'].get(cache_key) if cache_key else None
+        if cached_body is not None:
+            response = HttpResponse(cached_body, content_type='application/geo+json')
+        else:
+            features = []
+            for recording in recordings:
+                if not recording.geojson_file:
+                    continue
+                try:
+                    with recording.geojson_file.open('rb') as source:
+                        payload = json.load(source)
+                except FileNotFoundError as exc:
+                    raise Http404 from exc
+                for feature in payload['features']:
+                    feature['properties'] = {
+                        **feature.get('properties', {}),
+                        'route_id': route.pk,
+                        'child_route_id': recording.pk,
+                        'activity_type': recording.activity_type,
+                    }
+                    if overview:
+                        coords = feature['geometry']['coordinates']
+                        stride = max(1, math.ceil(len(coords) / 1500))
+                        simplified = [point[:2] for point in coords[::stride]]
+                        if coords and simplified[-1] != coords[-1][:2]:
+                            simplified.append(coords[-1][:2])
+                        feature['geometry']['coordinates'] = simplified
+                    features.append(feature)
+            if not features:
+                raise Http404
+            response = JsonResponse(
+                {'type': 'FeatureCollection', 'features': features},
+                content_type='application/geo+json',
+            )
+            if cache_key:
+                caches['route_overviews'].set(cache_key, response.content)
+    if etag:
+        response['ETag'] = etag
     response['Cache-Control'] = (
         'private, no-store' if can_preview else 'public, max-age=0, must-revalidate'
     )

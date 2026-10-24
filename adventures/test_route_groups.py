@@ -1,8 +1,10 @@
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.cache import caches
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -271,6 +273,49 @@ class RouteGroupTests(TestCase):
         overview = self.client.get(manifest[0]['url']).json()
         self.assertTrue(
             all(len(f['geometry']['coordinates'][0]) == 2 for f in overview['features'])
+        )
+
+    def test_overview_cache_revalidates_and_respects_visibility(self):
+        caches['route_overviews'].clear()
+        group = self.group(is_public=True)
+        child = self.recording(parent=group)
+        url = reverse('adventure-route-geojson', args=[group.pk]) + '?overview=1'
+
+        call_command('warm_route_overviews', verbosity=0)
+        with patch(
+            'django.db.models.fields.files.FieldFile.open',
+            side_effect=AssertionError('cache miss'),
+        ):
+            first = self.client.get(url)
+        self.assertEqual(first.status_code, 200)
+        self.assertIn('must-revalidate', first['Cache-Control'])
+        cached = self.client.get(url)
+        self.assertEqual(cached.content, first.content)
+        self.assertEqual(
+            self.client.get(url, HTTP_IF_NONE_MATCH=first['ETag']).status_code,
+            304,
+        )
+
+        child.activity_type = 'hiking'
+        child.save()
+        changed = self.client.get(url, HTTP_IF_NONE_MATCH=first['ETag'])
+        self.assertEqual(changed.status_code, 200)
+        self.assertNotEqual(changed['ETag'], first['ETag'])
+        self.assertEqual(
+            changed.json()['features'][0]['properties']['activity_type'], 'hiking'
+        )
+
+        child.file = SimpleUploadedFile('replacement.gpx', GPX)
+        child.save()
+        replaced = self.client.get(url, HTTP_IF_NONE_MATCH=changed['ETag'])
+        self.assertEqual(replaced.status_code, 200)
+        self.assertNotEqual(replaced['ETag'], changed['ETag'])
+
+        group.is_public = False
+        group.save()
+        self.assertEqual(
+            self.client.get(url, HTTP_IF_NONE_MATCH=replaced['ETag']).status_code,
+            404,
         )
 
     def test_public_leg_does_not_publish_private_group_or_sibling(self):

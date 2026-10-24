@@ -122,6 +122,16 @@ DATABASES = {
     }
 }
 
+CACHES = {
+    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
+    "route_overviews": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": "/tmp/nicola-beirer-route-overviews",
+        "TIMEOUT": None,
+        "OPTIONS": {"MAX_ENTRIES": 1000},
+    },
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

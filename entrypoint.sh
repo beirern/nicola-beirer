@@ -9,6 +9,7 @@ done
 
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
+python manage.py warm_route_overviews
 
 exec gunicorn nicolabeirer.wsgi:application \
   --bind 0.0.0.0:8000 \
