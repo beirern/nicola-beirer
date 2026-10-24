@@ -130,6 +130,7 @@
 </section>
 {% endif %}
 
+{% if request.user.is_authenticated and request.user.is_active and request.user.is_staff %}
 {% get_adventure_gallery page as gallery_albums %}
 {% get_adventure_photos page as gallery_photos %}
 {% if gallery_albums or gallery_photos %}
@@ -162,6 +163,7 @@
   </div>
   {% endif %}
 </section>
+{% endif %}
 {% endif %}
 {% endblock %}
 

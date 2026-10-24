@@ -21,9 +21,11 @@
     <a href="/adventures/" class="border border-[#e3d5bc] rounded px-4 py-2 text-[#6b5d47] hover:text-accent hover:border-accent transition-colors">
       Adventures
     </a>
+    {% if request.user.is_authenticated and request.user.is_active and request.user.is_staff %}
     <a href="/gallery/" class="border border-[#e3d5bc] rounded px-4 py-2 text-[#6b5d47] hover:text-accent hover:border-accent transition-colors">
       Gallery
     </a>
+    {% endif %}
     <a href="/projects/" class="border border-[#e3d5bc] rounded px-4 py-2 text-[#6b5d47] hover:text-accent hover:border-accent transition-colors">
       Projects
     </a>

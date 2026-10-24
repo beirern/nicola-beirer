@@ -1,12 +1,20 @@
 from django.db import models
 from django.db.models import Count
+from django.http import Http404
 from modelcluster.fields import ParentalKey
 from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.fields import RichTextField
 from wagtail.models import Orderable, Page
 
 
-class GalleryIndexPage(Page):
+class StaffOnlyGalleryMixin:
+    def serve(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or not request.user.is_active or not request.user.is_staff:
+            raise Http404
+        return super().serve(request, *args, **kwargs)
+
+
+class GalleryIndexPage(StaffOnlyGalleryMixin, Page):
     intro = RichTextField(blank=True)
 
     content_panels = Page.content_panels + [FieldPanel('intro')]
@@ -28,7 +36,7 @@ class GalleryIndexPage(Page):
         verbose_name = 'Gallery Index Page'
 
 
-class GalleryAlbumPage(Page):
+class GalleryAlbumPage(StaffOnlyGalleryMixin, Page):
     description = models.TextField(blank=True)
     date = models.DateField()
     cover_image = models.ForeignKey(

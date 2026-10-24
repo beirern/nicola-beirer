@@ -52,10 +52,12 @@
            class="transition-colors {% if '/adventures/' in request.path %}text-ink{% else %}text-[#6b5d47] hover:text-accent{% endif %}">
           adventures
         </a>
+        {% if request.user.is_authenticated and request.user.is_active and request.user.is_staff %}
         <a href="/gallery/"
            class="transition-colors {% if '/gallery/' in request.path %}text-ink{% else %}text-[#6b5d47] hover:text-accent{% endif %}">
           gallery
         </a>
+        {% endif %}
         <a href="/projects/"
            class="transition-colors {% if '/projects/' in request.path %}text-ink{% else %}text-[#6b5d47] hover:text-accent{% endif %}">
           projects
