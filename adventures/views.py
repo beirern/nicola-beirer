@@ -4,13 +4,13 @@ import json
 import math
 
 from django.core.cache import caches
-from django.db.models import Q
+from django.db.models import Q, Count, Prefetch
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.cache import get_conditional_response
 
-from adventures.models import AdventurePage, Route
+from adventures.models import AdventurePage, Route, Waypoint, WaypointPhoto
 
 
 def public_routes():
@@ -40,6 +40,56 @@ def displayed_routes(visible):
     return visible.exclude(
         kind=Route.Kind.RECORDING, parent_route_id__in=visible_groups
     ).prefetch_related('children')
+
+
+def visible_waypoints():
+    displayed = displayed_routes(public_routes()).values('pk')
+    return (
+        Waypoint.objects.filter(is_public=True, route_id__in=displayed)
+        .filter(Q(route__kind=Route.Kind.GROUP) | Q(route__parent_route__isnull=True))
+        .annotate(photo_count=Count('photos'))
+        .filter(photo_count__gt=0)
+        .select_related('route')
+    )
+
+
+def waypoint_manifest():
+    stops = visible_waypoints().prefetch_related(
+        Prefetch(
+            'photos',
+            queryset=WaypointPhoto.objects.select_related('image').order_by('sort_order', 'pk'),
+        )
+    )
+    return [
+        {
+            'id': waypoint.pk,
+            'name': waypoint.name,
+            'coordinates': [float(waypoint.longitude), float(waypoint.latitude)],
+            'route_id': waypoint.route_id,
+            'photo_count': waypoint.photo_count,
+            'previews': [
+                photo.image.get_rendition('fill-120x150').url
+                for photo in waypoint.photos.all()[:5]
+            ],
+            'url': reverse('adventure-waypoint-detail', args=[waypoint.pk]),
+        }
+        for waypoint in stops
+    ]
+
+
+def waypoint_detail(request, waypoint_id):
+    waypoint = get_object_or_404(visible_waypoints(), pk=waypoint_id)
+    photos = []
+    for photo in waypoint.photos.select_related('image').order_by('sort_order', 'pk'):
+        rendition = photo.image.get_rendition('width-1200')
+        photos.append({
+            'url': rendition.url,
+            'width': rendition.width,
+            'height': rendition.height,
+            'alt': photo.image.description or photo.image.title,
+            'caption': photo.caption,
+        })
+    return JsonResponse({'id': waypoint.pk, 'name': waypoint.name, 'photos': photos})
 
 
 def route_manifest(request):
@@ -126,6 +176,8 @@ def route_geojson(request, route_id):
         if not request.user.is_authenticated or not (
             request.user.has_perm('adventures.view_route')
             or request.user.has_perm('adventures.change_route')
+            or request.user.has_perm('adventures.add_waypoint')
+            or request.user.has_perm('adventures.change_waypoint')
         ):
             raise Http404
         route = get_object_or_404(Route, pk=route_id)

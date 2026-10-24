@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.shortcuts import render
-from adventures.views import route_manifest
+from adventures.views import route_manifest, waypoint_manifest
 
 from adventures.models import Route
 from blog.models import BlogPage
@@ -27,6 +27,7 @@ def home(request):
     }
     context = {
         'map_routes': map_routes,
+        'map_waypoints': waypoint_manifest(),
         'activity_filters': [
             {
                 'value': value,

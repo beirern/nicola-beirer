@@ -100,6 +100,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "nicolabeirer.context_processors.app_version",
+                "nicolabeirer.context_processors.carto_key",
             ],
         },
     },

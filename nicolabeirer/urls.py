@@ -6,7 +6,7 @@ from wagtail import urls as wagtail_urls
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.documents import urls as wagtaildocs_urls
 
-from adventures.views import route_geojson
+from adventures.views import route_geojson, waypoint_detail
 from . import views
 
 urlpatterns = [
@@ -14,6 +14,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('projects/', include('projects.urls')),
     path('routes/<int:route_id>/geojson/', route_geojson, name='adventure-route-geojson'),
+    path('waypoints/<int:waypoint_id>/photos/', waypoint_detail, name='adventure-waypoint-detail'),
     path('cms/', include(wagtailadmin_urls)),
     path('documents/', include(wagtaildocs_urls)),
     path('', include(wagtail_urls)),  # catch-all, must be last

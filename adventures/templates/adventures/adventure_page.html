@@ -113,11 +113,12 @@
   {% endfor %}
 </article>
 
-{% if page.waypoints.all %}
+{% if page.adventure_waypoints.all %}
 <section class="border-t border-[#e3d5bc] pt-8">
   <h2 class="font-serif text-lg font-semibold mb-4">Waypoints</h2>
   <div class="flex flex-col">
-    {% for waypoint in page.waypoints.all %}
+    {% for link in page.adventure_waypoints.all %}
+    {% with waypoint=link.waypoint %}
     <div class="border-t border-[#e3d5bc] py-4 first:border-t-0 first:pt-0">
       <h3 class="font-semibold mb-1">{{ waypoint.name }}</h3>
       {% if waypoint.description %}
@@ -125,6 +126,7 @@
       {% endif %}
       <p class="text-[#8a7a5f] text-xs">{{ waypoint.latitude }}, {{ waypoint.longitude }}</p>
     </div>
+    {% endwith %}
     {% endfor %}
   </div>
 </section>

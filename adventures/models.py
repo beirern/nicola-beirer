@@ -2,12 +2,13 @@ from datetime import date
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, MinValueValidator, MaxValueValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.functional import cached_property
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
 from taggit.models import TaggedItemBase
 from wagtail.admin.panels import FieldPanel, HelpPanel, InlinePanel, MultiFieldPanel
 from wagtail.fields import RichTextField, StreamField
@@ -24,26 +25,58 @@ class AdventurePageTag(TaggedItemBase):
     )
 
 
-class Waypoint(Orderable):
-    page = ParentalKey(
-        'adventures.AdventurePage',
-        related_name='waypoints',
-        on_delete=models.CASCADE,
-    )
+class Waypoint(ClusterableModel):
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=500, blank=True)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, validators=[MinValueValidator(-90), MaxValueValidator(90)])
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, validators=[MinValueValidator(-180), MaxValueValidator(180)])
+    route = models.ForeignKey('adventures.Route', null=True, blank=True, on_delete=models.PROTECT, related_name='waypoints')
+    is_public = models.BooleanField(default=False, verbose_name='Show on public map')
 
     panels = [
+        FieldPanel('route'),
         FieldPanel('name'),
         FieldPanel('description'),
         FieldPanel('latitude'),
         FieldPanel('longitude'),
+        HelpPanel(template='adventures/admin/waypoint_map.html'),
+        InlinePanel('photos', label='Photos'),
+        FieldPanel('is_public'),
     ]
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.route_id and self.route.kind == 'recording' and self.route.parent_route_id:
+            errors['route'] = 'Choose the group for a grouped recording.'
+        if self.is_public and not self.route_id:
+            errors['route'] = 'Choose a route before showing this waypoint on the public map.'
+        if self.latitude is not None and self.longitude is not None:
+            duplicates = type(self).objects.filter(latitude=self.latitude, longitude=self.longitude)
+            if self.pk:
+                duplicates = duplicates.exclude(pk=self.pk)
+            if duplicates.exists():
+                errors['latitude'] = 'Another waypoint already uses these exact coordinates. Move this marker slightly.'
+        if errors:
+            raise ValidationError(errors)
 
     def __str__(self):
         return self.name
+
+
+class WaypointPhoto(Orderable):
+    waypoint = ParentalKey(Waypoint, related_name='photos', on_delete=models.CASCADE)
+    image = models.ForeignKey('wagtailimages.Image', on_delete=models.PROTECT, related_name='+')
+    caption = models.CharField(max_length=500, blank=True)
+
+    panels = [FieldPanel('image'), FieldPanel('caption')]
+
+
+class AdventureWaypoint(Orderable):
+    page = ParentalKey('adventures.AdventurePage', related_name='adventure_waypoints', on_delete=models.CASCADE)
+    waypoint = models.ForeignKey(Waypoint, on_delete=models.PROTECT, related_name='adventure_links')
+
+    panels = [FieldPanel('waypoint')]
 
 
 class Route(models.Model):
@@ -198,6 +231,7 @@ class Route(models.Model):
             bool(self.parent_route_id)
             or self.children.exists()
             or self.adventure_links.exists()
+            or self.waypoints.exists()
         )
 
     def delete(self, *args, **kwargs):
@@ -205,7 +239,7 @@ class Route(models.Model):
 
         if self.deletion_blocked:
             raise ProtectedError(
-                'Detach this route and its legs, and remove adventure links before deleting it.',
+                'Detach this route and its legs, waypoints, and adventure links before deleting it.',
                 {self},
             )
         return super().delete(*args, **kwargs)
@@ -497,7 +531,7 @@ class AdventurePage(Page):
         FieldPanel('intro'),
         FieldPanel('header_image'),
         InlinePanel('adventure_routes', label='Routes'),
-        InlinePanel('waypoints', label='Waypoints'),
+        InlinePanel('adventure_waypoints', label='Waypoints'),
         FieldPanel('body'),
     ]
 

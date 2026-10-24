@@ -9,9 +9,39 @@ from django.db import models, transaction
 from wagtail.admin.forms import WagtailAdminModelForm
 from wagtail.models import ReferenceIndex
 
-from adventures.models import Route
+from adventures.models import Route, Waypoint
 
 logger = logging.getLogger(__name__)
+
+
+class WaypointAdminForm(WagtailAdminModelForm):
+    class Meta:
+        model = Waypoint
+        fields = '__all__'
+
+    class Media:
+        js = ['adventures/waypoint-editor.js']
+        css = {'all': ['https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.css']}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['route'].queryset = Route.objects.filter(
+            models.Q(kind=Route.Kind.GROUP)
+            | models.Q(kind=Route.Kind.RECORDING, parent_route__isnull=True)
+        )
+
+    def is_valid(self):
+        valid = super().is_valid()
+        if self.cleaned_data.get('is_public') and 'photos' in self.formsets:
+            photos = self.formsets['photos']
+            if photos.is_valid() and not any(
+                form.cleaned_data.get('image')
+                for form in photos.forms
+                if form.cleaned_data and not form.cleaned_data.get('DELETE')
+            ):
+                self.add_error('is_public', 'Add at least one photo before showing this waypoint on the public map.')
+                valid = False
+        return valid
 
 
 class RouteLegForm(forms.Form):

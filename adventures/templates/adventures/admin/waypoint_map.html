@@ -1,0 +1,9 @@
+<div class="waypoint-editor-map">
+  <p id="waypoint-map-status" role="status">Choose a route to place this waypoint on its map. You can also enter coordinates above.</p>
+  <div id="waypoint-map" data-carto-key="{{ carto_api_key }}" role="region" aria-label="Waypoint placement map" aria-describedby="waypoint-map-status"></div>
+</div>
+<style>
+  #waypoint-map { height: 350px; border: 1px solid #b9b9b9; border-radius: 4px; margin-top: 8px; }
+  .waypoint-editor-map { margin: 16px 0 24px; }
+  .waypoint-editor-map p { margin: 0; }
+</style>

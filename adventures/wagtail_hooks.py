@@ -10,11 +10,12 @@ from wagtail.snippets.views.snippets import (
     SnippetViewSet,
 )
 
-from adventures.models import Route
-from adventures.forms import RouteAdminForm
+from adventures.models import Route, Waypoint
+from adventures.forms import RouteAdminForm, WaypointAdminForm
 from adventures.filters import RouteFilterSet
 
 Route.base_form_class = RouteAdminForm
+Waypoint.base_form_class = WaypointAdminForm
 
 
 class RouteDeleteView(DeleteView):
@@ -27,6 +28,7 @@ class RouteDeleteView(DeleteView):
             context['usage_count'] = (
                 self.object.adventure_links.count()
                 + self.object.children.count()
+                + self.object.waypoints.count()
                 + bool(self.object.parent_route_id)
             )
         return context
@@ -34,12 +36,12 @@ class RouteDeleteView(DeleteView):
     def form_valid(self, form):
         if self.object.deletion_blocked:
             raise PermissionDenied(
-                'Detach this route’s legs and remove its adventure links before deleting it.'
+                'Detach this route’s legs, waypoints, and adventure links before deleting it.'
             )
         try:
             return super().form_valid(form)
         except ProtectedError as exc:
-            raise PermissionDenied('This route is used by an adventure.') from exc
+            raise PermissionDenied('This route is still in use.') from exc
 
 
 class RouteFormViewMixin:
@@ -86,6 +88,18 @@ class RouteViewSet(SnippetViewSet):
 register_snippet(RouteViewSet)
 
 
+class WaypointViewSet(SnippetViewSet):
+    model = Waypoint
+    icon = 'site'
+    menu_label = 'Waypoints'
+    add_to_admin_menu = True
+    list_display = ['name', 'route', 'is_public']
+    search_fields = ['name', 'description']
+
+
+register_snippet(WaypointViewSet)
+
+
 @hooks.register('before_delete_snippet')
 def protect_grouped_routes(request, instances):
     # Bulk deletion uses a separate Wagtail view and bypasses model.delete().
@@ -93,5 +107,5 @@ def protect_grouped_routes(request, instances):
         isinstance(route, Route) and route.deletion_blocked for route in instances
     ):
         raise PermissionDenied(
-            'Detach route legs and remove adventure links before deleting them.'
+            'Detach route legs, waypoints, and adventure links before deleting them.'
         )
