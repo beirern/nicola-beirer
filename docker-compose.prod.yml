@@ -1,3 +1,5 @@
 services:
   web:
     image: ${IMAGE:?IMAGE must be set}
+    environment:
+      DEPLOYED_IMAGE: ${IMAGE:?IMAGE must be set}
