@@ -12,6 +12,10 @@ let map, popup, selected, activeFilter = 'all';
 let activeDeck, activePhotos = [], photoIndex = 0, activeMarker, deckRequest = 0;
 const markers = new Map();
 const loaded = new Map();
+// Marker detail follows map zoom: 0 bubble, 1 thumbnail, 2 small fan, 3 full fan.
+const LEVEL_ZOOM = [4, 7, 10];
+const LEVEL_MERGE_PX = [64, 88, 124, 164];
+let deckStops = [];
 const buttons = [...document.querySelectorAll('[data-select-route]')];
 const resetButton = document.querySelector('[data-reset-map]');
 const motionDuration = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 850;
@@ -28,9 +32,98 @@ function visibleWaypoints() {
   });
 }
 
+function markerLevel() {
+  const zoom = map.getZoom();
+  return LEVEL_ZOOM.filter(limit => zoom >= limit).length;
+}
+
 function updateMarkers() {
-  const ids = new Set(visibleWaypoints().map(stop => stop.id));
-  markers.forEach((marker, id) => { marker.getElement().hidden = !ids.has(id); });
+  if (!map || !markers.size) return;
+  const level = markerLevel();
+  const stops = visibleWaypoints();
+  const points = stops.map(stop => ({stop, point: map.project(stop.coordinates)}));
+  const groups = [];
+  points.forEach(item => {
+    const touching = groups.filter(group => group.some(member =>
+      Math.hypot(member.point.x - item.point.x, member.point.y - item.point.y) < LEVEL_MERGE_PX[level]
+    ));
+    if (!touching.length) groups.push([item]);
+    else {
+      const first = touching[0];
+      first.push(item);
+      touching.slice(1).forEach(group => {
+        first.push(...group);
+        groups.splice(groups.indexOf(group), 1);
+      });
+    }
+  });
+  const visibleIds = new Set(stops.map(stop => stop.id));
+  markers.forEach(marker => { marker.getElement().hidden = !visibleIds.has(Number(marker.getElement().dataset.stopId)); });
+  groups.forEach(group => {
+    const lead = group[0].stop;
+    const button = markers.get(lead.id).getElement();
+    group.slice(1).forEach(({stop}) => { markers.get(stop.id).getElement().hidden = true; });
+    const total = group.reduce((sum, {stop}) => sum + stop.photo_count, 0);
+    const merged = group.length > 1;
+    button.classList.remove('waypoint-level-0', 'waypoint-level-1', 'waypoint-level-2', 'waypoint-level-3');
+    button.classList.add('waypoint-preview-button', `waypoint-level-${level}`);
+    button.classList.toggle('waypoint-merged', merged);
+    button.dataset.clusterIds = merged ? group.map(({stop}) => stop.id).join(',') : '';
+    button.setAttribute('aria-label', merged
+      ? `${group.length} photo stops, ${total} photos; zoom in`
+      : `${lead.name}, ${lead.photo_count} ${lead.photo_count === 1 ? 'photo' : 'photos'}`);
+    button.querySelector('.waypoint-preview-count').textContent = merged && level > 0 ? `${group.length} stops` : String(total);
+    // A stop's cover is its first photo; merged stacks show each member's cover.
+    const covers = merged ? group.map(({stop}) => stop.previews[0]) : lead.previews;
+    renderPreview(button, covers.slice(0, 3));
+    markers.get(lead.id).setOffset([0, 8]);
+  });
+}
+
+function renderPreview(button, urls) {
+  const key = urls.join('|');
+  if (button.dataset.previewKey === key) return;
+  button.dataset.previewKey = key;
+  const stack = button.querySelector('.waypoint-preview-stack');
+  stack.replaceChildren();
+  urls.forEach((url, index) => {
+    const card = document.createElement('span');
+    card.className = `waypoint-preview-card waypoint-preview-card-${index}`;
+    const photo = document.createElement('img');
+    photo.src = url;
+    photo.alt = '';
+    photo.loading = 'lazy';
+    card.append(photo);
+    stack.append(card);
+  });
+}
+
+function zoomIntoGroup(button) {
+  const ids = button.dataset.clusterIds.split(',').map(Number);
+  const bounds = new maplibregl.LngLatBounds();
+  waypoints.filter(stop => ids.includes(stop.id)).forEach(stop => bounds.extend(stop.coordinates));
+  const before = map.getZoom();
+  map.fitBounds(bounds, {padding: 140, maxZoom: Math.min(before + 3, 17), duration: motionDuration()});
+  // Stops sharing (almost) one spot cannot separate; open the first one, the route strip reaches the rest.
+  if (before >= 16.5) openDeck(waypoints.find(stop => stop.id === ids[0]), button);
+}
+
+// Order stops along their route so the deck's route strip reads start to finish.
+const progressCache = new Map();
+function routeProgress(stop) {
+  if (progressCache.has(stop.id)) return progressCache.get(stop.id);
+  const line = (loaded.get(stop.route_id) || []).flatMap(feature => feature.geometry.coordinates);
+  let best = 0, bestDistance = Infinity;
+  line.forEach((point, index) => {
+    const distance = (point[0] - stop.coordinates[0]) ** 2 + (point[1] - stop.coordinates[1]) ** 2;
+    if (distance < bestDistance) { best = index; bestDistance = distance; }
+  });
+  progressCache.set(stop.id, best);
+  return best;
+}
+
+function orderedStops() {
+  return visibleWaypoints().sort((a, b) => a.route_id - b.route_id || routeProgress(a) - routeProgress(b));
 }
 
 function fitFeatures(features, padding = 35, maxZoom = 12, duration = 0) {
@@ -124,16 +217,39 @@ function renderDeck() {
   const photo = activePhotos[photoIndex];
   if (!photo) return;
   deck.querySelector('[data-deck-name]').textContent = activeDeck.name;
-  deck.querySelector('[data-deck-count]').textContent = `${photoIndex + 1} of ${activePhotos.length} photos`;
+  const stopNumber = deckStops.findIndex(stop => stop.id === activeDeck.id) + 1;
+  deck.querySelector('[data-deck-count]').textContent =
+    `${stopNumber ? `Stop ${stopNumber} of ${deckStops.length} · ` : ''}${photoIndex + 1} of ${activePhotos.length} photos`;
   const image = deck.querySelector('[data-deck-image]');
   image.src = photo.url;
   image.alt = photo.alt;
   deck.querySelector('[data-deck-caption]').textContent = photo.caption;
   const previous = deck.querySelector('[data-deck-prev]');
   const next = deck.querySelector('[data-deck-next]');
-  previous.disabled = next.disabled = activePhotos.length < 2;
-  previous.querySelector('img').src = activePhotos[(photoIndex - 1 + activePhotos.length) % activePhotos.length].url;
-  next.querySelector('img').src = activePhotos[(photoIndex + 1) % activePhotos.length].url;
+  previous.disabled = photoIndex === 0;
+  next.disabled = photoIndex === activePhotos.length - 1;
+  previous.querySelector('img').src = (activePhotos[photoIndex - 1] || photo).url;
+  next.querySelector('img').src = (activePhotos[photoIndex + 1] || photo).url;
+  renderStrip();
+}
+
+function renderStrip() {
+  const strip = deck.querySelector('[data-deck-strip]');
+  strip.replaceChildren();
+  strip.hidden = deckStops.length < 2;
+  deckStops.forEach((stop, index) => {
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.className = 'waypoint-strip-dot';
+    dot.style.left = `${index / (deckStops.length - 1) * 100}%`;
+    dot.setAttribute('aria-label', `${stop.name}, ${stop.photo_count} ${stop.photo_count === 1 ? 'photo' : 'photos'}`);
+    if (stop.id === activeDeck.id) dot.setAttribute('aria-current', 'true');
+    dot.addEventListener('click', () => {
+      map.easeTo({center: stop.coordinates, duration: motionDuration()});
+      openDeck(stop, markers.get(stop.id).getElement());
+    });
+    strip.append(dot);
+  });
 }
 
 function closeDeck(restoreFocus = true) {
@@ -156,9 +272,13 @@ async function openDeck(stop, marker) {
     activePhotos = details.photos;
     photoIndex = 0;
     if (!activePhotos.length) throw new Error('Photo stop has no photos');
+    const wasOpen = !deck.hidden;
+    deckStops = orderedStops();
+    if (!deckStops.some(item => item.id === stop.id)) deckStops.push(stop);
     deck.hidden = false;
     renderDeck();
-    deck.querySelector('[data-deck-close]').focus();
+    map.easeTo({center: stop.coordinates, duration: motionDuration()});
+    (wasOpen && deck.querySelector('[aria-current="true"]') || deck.querySelector('[data-deck-close]')).focus();
   } catch (error) {
     if (request === deckRequest) status.textContent = 'The photos for this stop could not load. Try again later.';
   }
@@ -166,7 +286,9 @@ async function openDeck(stop, marker) {
 
 function stepPhoto(delta) {
   if (!activePhotos.length) return;
-  photoIndex = (photoIndex + delta + activePhotos.length) % activePhotos.length;
+  const next = Math.max(0, Math.min(activePhotos.length - 1, photoIndex + delta));
+  if (next === photoIndex) return;
+  photoIndex = next;
   renderDeck();
 }
 
@@ -221,6 +343,26 @@ async function initialize() {
     }));
     const features = results.filter(result => result.status === 'fulfilled').flatMap(result => result.value);
     await new Promise(resolve => map.isStyleLoaded() ? resolve() : map.once('load', resolve));
+    // Shaded relief under water, roads, and labels; free elevation tiles, no key needed.
+    map.addSource('terrain', {
+      type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 14,
+      tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+      attribution: 'Terrain: Mapzen, AWS Terrain Tiles',
+    });
+    map.addLayer({
+      id: 'hillshade', type: 'hillshade', source: 'terrain',
+      paint: {
+        'hillshade-exaggeration': 0.45,
+        'hillshade-shadow-color': '#6b5a3e',
+        'hillshade-highlight-color': '#fffaf0',
+        'hillshade-accent-color': '#8a7a5f',
+      },
+    }, map.getLayer('water') ? 'water' : undefined);
+    // The basemap hides country names until zoom 2-3; show them when fully zoomed out.
+    ['place_country_1', 'place_country_2'].forEach(id => {
+      const layer = map.getLayer(id);
+      if (layer) map.setLayerZoomRange(id, 0, layer.maxzoom ?? 24);
+    });
     map.addSource('routes', {type: 'geojson', data: {type: 'FeatureCollection', features}});
     const filter = activeFilter === 'all' ? undefined : ['==', ['get', 'activity_type'], activeFilter];
     map.addLayer({id: 'route-lines', type: 'line', source: 'routes', ...(filter ? {filter} : {}), paint: {'line-color': ['get', 'color'], 'line-width': 3, 'line-opacity': 0.85}});
@@ -229,35 +371,29 @@ async function initialize() {
     waypoints.forEach(stop => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'waypoint-preview-button';
-      button.setAttribute('aria-label', `${stop.name}, ${stop.photo_count} ${stop.photo_count === 1 ? 'photo' : 'photos'}`);
+      button.dataset.stopId = stop.id;
       const stack = document.createElement('span');
       stack.className = 'waypoint-preview-stack';
       stack.setAttribute('aria-hidden', 'true');
-      const fan = [[0, 0], [-15, -9], [15, 9], [-27, -16], [27, 16]];
-      stop.previews.forEach((url, index) => {
-        const card = document.createElement('span');
-        card.className = 'waypoint-preview-card';
-        card.style.transform = `translateX(${fan[index][0]}px) rotate(${fan[index][1]}deg)`;
-        card.style.zIndex = String(5 - index);
-        const photo = document.createElement('img');
-        photo.src = url;
-        photo.alt = '';
-        photo.loading = 'lazy';
-        card.append(photo);
-        stack.append(card);
-      });
       const count = document.createElement('span');
       count.className = 'waypoint-preview-count';
-      count.textContent = String(stop.photo_count);
-      stack.append(count);
+      count.setAttribute('aria-hidden', 'true');
+      const stem = document.createElement('span');
+      stem.className = 'waypoint-stem';
+      stem.setAttribute('aria-hidden', 'true');
       const dot = document.createElement('span');
       dot.className = 'waypoint-dot-core';
       dot.setAttribute('aria-hidden', 'true');
-      button.append(stack, dot);
-      button.addEventListener('click', event => { event.stopPropagation(); openDeck(stop, button); });
-      markers.set(stop.id, new maplibregl.Marker({element: button, anchor: 'bottom', offset: [0, 9]}).setLngLat(stop.coordinates).addTo(map));
+      button.append(stack, count, stem, dot);
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        if (button.dataset.clusterIds) zoomIntoGroup(button);
+        else openDeck(stop, button);
+      });
+      markers.set(stop.id, new maplibregl.Marker({element: button, anchor: 'bottom', offset: [0, 8]}).setLngLat(stop.coordinates).addTo(map));
     });
+    map.on('moveend', updateMarkers);
+    map.on('resize', updateMarkers);
     updateMarkers();
     resetButton.disabled = features.length === 0;
     ['route-hit-area'].forEach(layer => {
