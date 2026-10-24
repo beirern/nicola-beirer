@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -64,12 +64,34 @@ class Waypoint(ClusterableModel):
         return self.name
 
 
+def photo_taken_on(image):
+    """Read the capture date from an image's EXIF data, or None when it has none."""
+    try:
+        from PIL import Image as PILImage
+
+        with image.file.open('rb') as file, PILImage.open(file) as picture:
+            exif = picture.getexif()
+            stamp = exif.get_ifd(0x8769).get(0x9003) or exif.get(0x0132)
+        return datetime.strptime(str(stamp)[:10], '%Y:%m:%d').date()
+    except Exception:
+        return None
+
+
 class WaypointPhoto(Orderable):
     waypoint = ParentalKey(Waypoint, related_name='photos', on_delete=models.CASCADE)
     image = models.ForeignKey('wagtailimages.Image', on_delete=models.PROTECT, related_name='+')
     caption = models.CharField(max_length=500, blank=True)
+    taken_on = models.DateField(
+        null=True, blank=True,
+        help_text='Shown before the caption. Filled from the photo when it has a capture date.',
+    )
 
-    panels = [FieldPanel('image'), FieldPanel('caption')]
+    panels = [FieldPanel('image'), FieldPanel('caption'), FieldPanel('taken_on')]
+
+    def save(self, *args, **kwargs):
+        if self.taken_on is None and self.image_id:
+            self.taken_on = photo_taken_on(self.image)
+        super().save(*args, **kwargs)
 
 
 class AdventureWaypoint(Orderable):

@@ -88,6 +88,7 @@ def waypoint_detail(request, waypoint_id):
             'height': rendition.height,
             'alt': photo.image.description or photo.image.title,
             'caption': photo.caption,
+            'taken_on': photo.taken_on.isoformat() if photo.taken_on else None,
         })
     return JsonResponse({'id': waypoint.pk, 'name': waypoint.name, 'photos': photos})
 
