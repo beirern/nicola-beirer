@@ -120,18 +120,20 @@ def route_manifest(request):
 
 
 def route_geojson(request, route_id):
-    can_preview = request.user.is_authenticated and (
-        request.user.has_perm('adventures.view_route')
-        or request.user.has_perm('adventures.change_route')
-    )
-    route = get_object_or_404(
-        Route.objects.all() if can_preview else public_routes(), pk=route_id
-    )
+    route = public_routes().filter(pk=route_id).first()
+    is_preview = route is None
+    if is_preview:
+        if not request.user.is_authenticated or not (
+            request.user.has_perm('adventures.view_route')
+            or request.user.has_perm('adventures.change_route')
+        ):
+            raise Http404
+        route = get_object_or_404(Route, pk=route_id)
     overview = request.GET.get('overview') == '1'
     recordings = route.recordings
     etag = None
     cache_key = None
-    if overview and not can_preview:
+    if overview and not is_preview:
         fingerprint = json.dumps(
             [
                 (leg.pk, leg.position, leg.geojson_file.name, leg.activity_type)
@@ -196,6 +198,6 @@ def route_geojson(request, route_id):
     if etag:
         response['ETag'] = etag
     response['Cache-Control'] = (
-        'private, no-store' if can_preview else 'public, max-age=0, must-revalidate'
+        'private, no-store' if is_preview else 'public, max-age=0, must-revalidate'
     )
     return response

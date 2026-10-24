@@ -282,6 +282,7 @@ class RouteGroupTests(TestCase):
         url = reverse('adventure-route-geojson', args=[group.pk]) + '?overview=1'
 
         call_command('warm_route_overviews', verbosity=0)
+        self.client.force_login(self.admin)
         with patch(
             'django.db.models.fields.files.FieldFile.open',
             side_effect=AssertionError('cache miss'),
@@ -313,9 +314,78 @@ class RouteGroupTests(TestCase):
 
         group.is_public = False
         group.save()
+        preview = self.client.get(url, HTTP_IF_NONE_MATCH=replaced['ETag'])
+        self.assertEqual(preview.status_code, 200)
+        self.assertEqual(preview['Cache-Control'], 'private, no-store')
+        self.assertNotIn('ETag', preview)
+        self.client.logout()
         self.assertEqual(
             self.client.get(url, HTTP_IF_NONE_MATCH=replaced['ETag']).status_code,
             404,
+        )
+
+    def test_wagtail_group_edit_warms_new_overview_before_next_visit(self):
+        caches['route_overviews'].clear()
+        group = self.group(is_public=True)
+        first = self.recording(parent=group)
+        second = self.recording(name='New leg')
+        url = reverse('adventure-route-geojson', args=[group.pk]) + '?overview=1'
+        old_etag = self.client.get(url)['ETag']
+
+        form = self.form(
+            self.group_data(
+                [first.pk, second.pk],
+                is_public='on',
+                **{'legs-INITIAL_FORMS': '1'},
+            ),
+            instance=group,
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        with self.captureOnCommitCallbacks(execute=True):
+            form.save()
+        self.assertEqual(
+            list(Route.objects.filter(parent_route=group).values_list('pk', flat=True)),
+            [first.pk, second.pk],
+        )
+
+        with patch(
+            'django.db.models.fields.files.FieldFile.open',
+            side_effect=AssertionError('overview was not warmed'),
+        ):
+            updated = self.client.get(url, HTTP_IF_NONE_MATCH=old_etag)
+        self.assertEqual(updated.status_code, 200)
+        self.assertNotEqual(updated['ETag'], old_etag)
+        self.assertEqual(len(updated.json()['features']), 2)
+
+    def test_wagtail_recording_edit_warms_new_overview_before_next_visit(self):
+        caches['route_overviews'].clear()
+        route = self.recording(is_public=True)
+        url = reverse('adventure-route-geojson', args=[route.pk]) + '?overview=1'
+        old_etag = self.client.get(url)['ETag']
+
+        form = self.form(
+            {
+                'kind': 'recording',
+                'name': route.name,
+                'activity_type': 'hiking',
+                'is_public': 'on',
+            },
+            instance=route,
+            files={'file': SimpleUploadedFile('replacement.gpx', GPX)},
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        with self.captureOnCommitCallbacks(execute=True):
+            form.save()
+
+        with patch(
+            'django.db.models.fields.files.FieldFile.open',
+            side_effect=AssertionError('overview was not warmed'),
+        ):
+            updated = self.client.get(url, HTTP_IF_NONE_MATCH=old_etag)
+        self.assertEqual(updated.status_code, 200)
+        self.assertNotEqual(updated['ETag'], old_etag)
+        self.assertEqual(
+            updated.json()['features'][0]['properties']['activity_type'], 'hiking'
         )
 
     def test_public_leg_does_not_publish_private_group_or_sibling(self):

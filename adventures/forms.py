@@ -1,5 +1,7 @@
 """Wagtail forms for grouping existing recordings and uploading new legs."""
 
+import logging
+
 from django import forms
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.core.validators import FileExtensionValidator
@@ -8,6 +10,8 @@ from wagtail.admin.forms import WagtailAdminModelForm
 from wagtail.models import ReferenceIndex
 
 from adventures.models import Route
+
+logger = logging.getLogger(__name__)
 
 
 class RouteLegForm(forms.Form):
@@ -241,6 +245,7 @@ class RouteAdminForm(WagtailAdminModelForm):
             instance = super().save(commit=commit)
             if commit:
                 self._save_legs()
+                self._warm_after_commit()
             else:
                 save_m2m = self.save_m2m
 
@@ -248,6 +253,21 @@ class RouteAdminForm(WagtailAdminModelForm):
                     with transaction.atomic():
                         save_m2m()
                         self._save_legs()
+                        self._warm_after_commit()
 
                 self.save_m2m = save_related
             return instance
+
+    def _warm_after_commit(self):
+        route_ids = {self.instance.pk, self.instance.parent_route_id} - {None}
+
+        def warm():
+            from adventures.map_cache import warm_route_overview
+
+            for route_id in route_ids:
+                try:
+                    warm_route_overview(route_id)
+                except Exception:
+                    logger.exception('Could not warm map overview for route %s', route_id)
+
+        transaction.on_commit(warm)
