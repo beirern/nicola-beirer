@@ -55,7 +55,6 @@ Personal portfolio app built on **Django 6 + Wagtail CMS**. PostgreSQL 18 for da
 - **nicolabeirer** — project root; home view and root URL routing
 - **blog** — Wagtail `BlogIndexPage` / `BlogPage` with `StreamField` body (HeadingBlock, ImageBlock, CodeBlock, QuoteBlock); taggit for tags
 - **adventures** — Routes own FIT/GPX recordings, statistics, and geometry; `AdventurePage` selects routes or route groups and holds story content
-- **projects** — Simple `ResumeProject` model (JSON fields for features/keywords/links); admin-managed only
 - **resume** — Wagtail `ResumePage` with structured StreamField blocks (WorkExperienceBlock, EducationBlock, SkillGroupBlock, etc.)
 
 ### Key Patterns
@@ -63,4 +62,3 @@ Personal portfolio app built on **Django 6 + Wagtail CMS**. PostgreSQL 18 for da
 - **Wagtail pages** inherit from `Page` and use `StreamField` for flexible block-based content. Each block type has a matching template in `templates/<app>/blocks/`.
 - **Route processing**: saving a new or replaced recording parses its FIT/GPX file and stores stats and GeoJSON on the route, outside Wagtail page revisions.
 - **Media storage** is conditional: S3 if `AWS_STORAGE_BUCKET_NAME` is set, otherwise local `MEDIA_ROOT`.
-- **Custom template filter** `duration` in `adventures/templatetags/` formats seconds → "Xh MMm".
