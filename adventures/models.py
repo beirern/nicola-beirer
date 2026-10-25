@@ -119,15 +119,9 @@ class Route(models.Model):
     """A recording or ordered group; geometry and statistics stay outside page revisions."""
 
     class ActivityType(models.TextChoices):
-        HIKING = 'hiking', 'Hiking'
         CYCLING = 'cycling', 'Cycling'
-        RUNNING = 'running', 'Running'
-        SKIING = 'skiing', 'Skiing'
-        CLIMBING = 'climbing', 'Climbing'
         MOUNTAINEERING = 'mountaineering', 'Mountaineering'
-        KAYAKING = 'kayaking', 'Kayaking'
-        SAILING = 'sailing', 'Sailing'
-        OTHER = 'other', 'Other'
+        FLYING = 'flying', 'Flying'
 
     class Kind(models.TextChoices):
         RECORDING = 'recording', 'Recording'
@@ -143,7 +137,7 @@ class Route(models.Model):
     activity_type = models.CharField(
         max_length=20,
         choices=ActivityType.choices,
-        default=ActivityType.HIKING,
+        default=ActivityType.CYCLING,
         blank=True,
     )
     file = models.FileField(

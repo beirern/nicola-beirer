@@ -7,15 +7,9 @@ from projects.models import ResumeProject
 
 
 ROUTE_ACTIVITY_COLORS = {
-    'hiking': '#57683f',
     'cycling': '#a8532e',
-    'running': '#9b3f70',
-    'skiing': '#366b9a',
-    'climbing': '#8b5e34',
     'mountaineering': '#62558f',
-    'kayaking': '#167f86',
-    'sailing': '#285a91',
-    'other': '#5f6670',
+    'flying': '#285a91',
 }
 
 

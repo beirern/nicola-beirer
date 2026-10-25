@@ -81,12 +81,12 @@ class RouteGroupTests(TestCase):
 
     def test_group_derives_metadata_without_storing_copies(self):
         group = self.group()
-        second = self.recording('Hike', 'hiking', group, 1)
+        second = self.recording('Flight', 'flying', group, 1)
         first = self.recording('Ride', 'cycling', group, 0)
         group.refresh_from_db()
         self.assertEqual([r.pk for r in group.recordings], [first.pk, second.pk])
-        self.assertEqual(group.activity_types, ['cycling', 'hiking'])
-        self.assertEqual(group.activity_label, 'Cycling / Hiking')
+        self.assertEqual(group.activity_types, ['cycling', 'flying'])
+        self.assertEqual(group.activity_label, 'Cycling / Flying')
         self.assertEqual(
             group.distance_km, round(first.distance_km + second.distance_km, 3)
         )
@@ -192,7 +192,7 @@ class RouteGroupTests(TestCase):
             {
                 'legs-0-route': '',
                 'legs-0-name': 'Uploaded leg',
-                'legs-0-activity_type': 'hiking',
+                'legs-0-activity_type': 'flying',
             }
         )
         form = self.form(
@@ -202,8 +202,8 @@ class RouteGroupTests(TestCase):
         group = form.save()
         child = group.children.get()
         self.assertTrue(child.geojson_file)
-        self.assertEqual(child.activity_type, 'hiking')
-        self.assertEqual(group.activity_label, 'Hiking')
+        self.assertEqual(child.activity_type, 'flying')
+        self.assertEqual(group.activity_label, 'Flying')
 
     def test_editor_rejects_duplicates_bad_uploads_and_taken_recordings(self):
         first = self.recording()
@@ -219,7 +219,7 @@ class RouteGroupTests(TestCase):
             **{
                 'legs-0-route': '',
                 'legs-0-name': 'Broken',
-                'legs-0-activity_type': 'hiking',
+                'legs-0-activity_type': 'flying',
             },
         )
         form = self.form(
@@ -244,7 +244,7 @@ class RouteGroupTests(TestCase):
     def test_public_group_is_one_map_entry_with_mixed_mode_geometry(self):
         group = self.group(is_public=True)
         first = self.recording(parent=group)
-        second = self.recording(mode='hiking', parent=group, position=1)
+        second = self.recording(mode='flying', parent=group, position=1)
         self.select(group)
         self.select(first, 1)
         self.page.save_revision().publish()
@@ -254,7 +254,7 @@ class RouteGroupTests(TestCase):
         self.assertEqual(manifest[0]['id'], group.pk)
         self.assertEqual(manifest[0]['leg_count'], 2)
         self.assertEqual(len(manifest[0]['stories']), 1)
-        self.assertEqual(manifest[0]['activity_types'], ['cycling', 'hiking'])
+        self.assertEqual(manifest[0]['activity_types'], ['cycling', 'flying'])
         payload = self.client.get(
             reverse('adventure-route-geojson', args=[group.pk])
         ).json()
@@ -265,7 +265,7 @@ class RouteGroupTests(TestCase):
         )
         self.assertEqual(
             [f['properties']['activity_type'] for f in payload['features']],
-            ['cycling', 'hiking'],
+            ['cycling', 'flying'],
         )
         self.assertTrue(
             all(len(f['geometry']['coordinates'][0]) == 3 for f in payload['features'])
@@ -297,13 +297,13 @@ class RouteGroupTests(TestCase):
             304,
         )
 
-        child.activity_type = 'hiking'
+        child.activity_type = 'flying'
         child.save()
         changed = self.client.get(url, HTTP_IF_NONE_MATCH=first['ETag'])
         self.assertEqual(changed.status_code, 200)
         self.assertNotEqual(changed['ETag'], first['ETag'])
         self.assertEqual(
-            changed.json()['features'][0]['properties']['activity_type'], 'hiking'
+            changed.json()['features'][0]['properties']['activity_type'], 'flying'
         )
 
         child.file = SimpleUploadedFile('replacement.gpx', GPX)
@@ -367,7 +367,7 @@ class RouteGroupTests(TestCase):
             {
                 'kind': 'recording',
                 'name': route.name,
-                'activity_type': 'hiking',
+                'activity_type': 'flying',
                 'is_public': 'on',
             },
             instance=route,
@@ -385,7 +385,7 @@ class RouteGroupTests(TestCase):
         self.assertEqual(updated.status_code, 200)
         self.assertNotEqual(updated['ETag'], old_etag)
         self.assertEqual(
-            updated.json()['features'][0]['properties']['activity_type'], 'hiking'
+            updated.json()['features'][0]['properties']['activity_type'], 'flying'
         )
 
     def test_public_leg_does_not_publish_private_group_or_sibling(self):
@@ -427,7 +427,7 @@ class RouteGroupTests(TestCase):
         group = self.group(is_public=True)
         child = self.recording(parent=group)
         Route.objects.bulk_create(
-            [Route(name='Pending', parent_route=group, file='draft.gpx', activity_type='skiing')]
+            [Route(name='Pending', parent_route=group, file='draft.gpx', activity_type='flying')]
         )
         self.assertIn(group.pk, public_routes().values_list('pk', flat=True))
         response = self.client.get('/')

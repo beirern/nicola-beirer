@@ -123,14 +123,14 @@ class WaypointTests(TestCase):
     def test_group_visibility_and_mixed_activity(self):
         group = Route.objects.create(name='Mixed trip', kind='group', is_public=True)
         self.route(parent=group, mode='cycling')
-        self.route(parent=group, mode='hiking')
+        self.route(parent=group, mode='flying')
         stop = self.stop(route=group, public=True)
         WaypointPhoto.objects.create(waypoint=stop, image=self.image())
         self.assertEqual(waypoint_manifest()[0]['route_id'], group.pk)
         from adventures.views import route_manifest
         request = self.client.request().wsgi_request
         group_item = next(item for item in route_manifest(request) if item['id'] == group.pk)
-        self.assertEqual(set(group_item['activity_types']), {'cycling', 'hiking'})
+        self.assertEqual(set(group_item['activity_types']), {'cycling', 'flying'})
         with self.assertRaises(ProtectedError):
             group.delete()
 

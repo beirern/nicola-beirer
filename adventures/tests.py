@@ -159,7 +159,7 @@ class RouteLibraryTests(TestCase):
 
         form_class = get_edit_handler(Route).get_form_class()
         form = form_class(
-            data={'name': 'Broken', 'activity_type': 'hiking'},
+            data={'name': 'Broken', 'activity_type': 'flying'},
             files={'file': SimpleUploadedFile('bad.gpx', b'not xml')},
         )
         self.assertFalse(form.is_valid())
@@ -241,19 +241,19 @@ class RouteLibraryTests(TestCase):
 
     def test_home_filters_include_only_visible_activity_types(self):
         self.route(is_public=True)
-        running = self.route(is_public=True)
-        running.activity_type = 'running'
-        running.save(update_fields=['activity_type'])
+        climber = self.route(is_public=True)
+        climber.activity_type = 'mountaineering'
+        climber.save(update_fields=['activity_type'])
 
         response = self.client.get('/')
         self.assertEqual(
             [item['value'] for item in response.context['activity_filters']],
-            ['cycling', 'running'],
+            ['cycling', 'mountaineering'],
         )
-        self.assertContains(response, 'data-route-filter="running"')
-        self.assertNotContains(response, 'data-route-filter="hiking"')
+        self.assertContains(response, 'data-route-filter="mountaineering"')
+        self.assertNotContains(response, 'data-route-filter="flying"')
         self.assertEqual(
-            response.context['activity_filters'][1]['color'], '#9b3f70'
+            response.context['activity_filters'][1]['color'], '#62558f'
         )
 
     def test_overrides_do_not_change_daily_averages(self):
@@ -352,7 +352,7 @@ class RouteLibraryTests(TestCase):
             '/cms/snippets/adventures/route/add/',
             {
                 'name': 'From admin',
-                'activity_type': 'hiking',
+                'activity_type': 'flying',
                 'file': SimpleUploadedFile('hike.gpx', GPX),
             },
         )
