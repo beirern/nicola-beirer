@@ -17,3 +17,16 @@ dependencies = [
 
 [tool.uv]
 package = false
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.13"
+include = ["adventures", "blog", "gallery", "nicolabeirer", "projects", "resume"]
+exclude = ["**/migrations"]
+reportAttributeAccessIssue = false
+reportIncompatibleVariableOverride = false
+reportIncompatibleMethodOverride = false
+reportIndexIssue = false
+reportAssignmentType = false
+reportGeneralTypeIssues = false
