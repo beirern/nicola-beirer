@@ -14,6 +14,9 @@ const markers = new Map();
 const loaded = new Map();
 // Marker detail follows map zoom: 0 bubble, 1 thumbnail, 2 small fan, 3 full fan.
 const LEVEL_ZOOM = [4, 7, 10];
+// A lone POI tapped from far out first zooms to show its surroundings; a second tap opens its photos.
+const CONTEXT_MIN_ZOOM = 7;
+const CONTEXT_ZOOM = 8.5;
 const LEVEL_MERGE_PX = [64, 88, 124, 164];
 let deckStops = [];
 let listIds, listNumbers = new Map(), listOpener;
@@ -488,7 +491,10 @@ async function initialize() {
       button.addEventListener('click', event => {
         event.stopPropagation();
         if (button.dataset.clusterIds) openList(button);
-        else openDeck(stop, button);
+        else if (map.getZoom() < CONTEXT_MIN_ZOOM && !button.classList.contains('waypoint-numbered')) {
+          status.textContent = `Zoomed in on ${stop.name}. Select it again to see its photos.`;
+          map.flyTo({center: stop.coordinates, zoom: CONTEXT_ZOOM, duration: motionDuration()});
+        } else openDeck(stop, button);
       });
       markers.set(stop.id, new maplibregl.Marker({element: button, anchor: 'bottom', offset: [0, 8]}).setLngLat(stop.coordinates).addTo(map));
     });
