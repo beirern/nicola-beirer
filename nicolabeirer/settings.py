@@ -193,6 +193,8 @@ AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", "")
 AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
 AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME", "")
 AWS_S3_REGION_NAME = os.environ.get("AWS_REGION", "us-west-2")
+# Renditions get new filenames when they change (AWS_S3_FILE_OVERWRITE is off), so cache forever
+AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=31536000, immutable"}
 AWS_QUERYSTRING_AUTH = False  # Public bucket — no expiring signed URLs in <img> tags
 
 if AWS_STORAGE_BUCKET_NAME:

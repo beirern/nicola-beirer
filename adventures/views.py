@@ -10,7 +10,10 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.cache import get_conditional_response
 
-from adventures.models import AdventurePage, Route, Waypoint, WaypointPhoto
+from adventures.models import (
+    AdventurePage, Route, Waypoint, WaypointPhoto,
+    WAYPOINT_PHOTO_FILTER, WAYPOINT_PREVIEW_FILTER,
+)
 
 
 def public_routes():
@@ -68,7 +71,7 @@ def waypoint_manifest():
             'route_id': waypoint.route_id,
             'photo_count': waypoint.photo_count,
             'previews': [
-                photo.image.get_rendition('fill-120x150').url
+                photo.image.get_rendition(WAYPOINT_PREVIEW_FILTER).url
                 for photo in waypoint.photos.all()[:5]
             ],
             'url': reverse('adventure-waypoint-detail', args=[waypoint.pk]),
@@ -81,7 +84,7 @@ def waypoint_detail(request, waypoint_id):
     waypoint = get_object_or_404(visible_waypoints(), pk=waypoint_id)
     photos = []
     for photo in waypoint.photos.select_related('image').order_by('sort_order', 'pk'):
-        rendition = photo.image.get_rendition('width-1200')
+        rendition = photo.image.get_rendition(WAYPOINT_PHOTO_FILTER)
         photos.append({
             'url': rendition.url,
             'width': rendition.width,
