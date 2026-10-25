@@ -17,6 +17,7 @@ const LEVEL_ZOOM = [4, 7, 10];
 // A lone POI tapped from far out first zooms to show its surroundings; a second tap opens its photos.
 const CONTEXT_MIN_ZOOM = 7;
 const CONTEXT_ZOOM = 8.5;
+const LEVEL_CARD = [[32, 40], [46, 58], [68, 86], [92, 116]];
 const LEVEL_MERGE_PX = [64, 88, 124, 164];
 let deckStops = [];
 let listIds, listNumbers = new Map(), listOpener;
@@ -42,6 +43,31 @@ function markerLevel() {
   return LEVEL_ZOOM.filter(limit => zoom >= limit).length;
 }
 
+// Pick where a stack sits relative to its dot: above by default, beside it when the route runs underneath.
+function routeLine(routeId) {
+  const points = (loaded.get(routeId) || []).flatMap(feature => feature.geometry.coordinates);
+  const step = Math.max(1, Math.ceil(points.length / 500));
+  return points.filter((_, index) => index % step === 0).map(point => map.project(point));
+}
+
+function stackSide(dot, level, line) {
+  const [w, h] = LEVEL_CARD[level];
+  const reach = 0.74 * w, edge = 14, pad = 6;
+  const rects = {
+    up: [-reach, -(h + 14), reach, -14],
+    right: [edge, -(h + 8), edge + 2 * reach, -8],
+    left: [-(edge + 2 * reach), -(h + 8), -edge, -8],
+  };
+  let best = 'up', fewest = Infinity;
+  for (const [side, [x1, y1, x2, y2]] of Object.entries(rects)) {
+    const hits = line.filter(point =>
+      point.x > dot.x + x1 - pad && point.x < dot.x + x2 + pad && point.y > dot.y + y1 - pad && point.y < dot.y + y2 + pad).length;
+    if (hits < fewest) { fewest = hits; best = side; }
+    if (fewest === 0) break;
+  }
+  return best;
+}
+
 function updateMarkers() {
   if (!map || !markers.size) return;
   const level = markerLevel();
@@ -65,11 +91,12 @@ function updateMarkers() {
       });
     }
   });
+  const lines = new Map();
   const visibleIds = new Set(stops.map(stop => stop.id));
   markers.forEach(marker => {
     const element = marker.getElement();
     element.hidden = !visibleIds.has(Number(element.dataset.stopId));
-    element.classList.remove('waypoint-numbered', 'waypoint-highlight');
+    element.classList.remove('waypoint-numbered', 'waypoint-highlight', 'waypoint-side-left', 'waypoint-side-right');
     element.style.removeProperty('--poi-color');
   });
   groups.forEach(group => {
@@ -90,6 +117,14 @@ function updateMarkers() {
     const covers = merged ? group.map(({stop}) => stop.previews[0]) : lead.previews;
     renderPreview(button, covers.slice(0, 3));
     markers.get(lead.id).setOffset([0, 8]);
+    if (level > 0) {
+      const line = [...new Set(group.map(({stop}) => stop.route_id))].flatMap(routeId => {
+        if (!lines.has(routeId)) lines.set(routeId, routeLine(routeId));
+        return lines.get(routeId);
+      });
+      const side = stackSide(group[0].point, level, line);
+      if (side !== 'up') button.classList.add(`waypoint-side-${side}`);
+    }
   });
   // POIs from an open list show as numbered dots matching the list.
   pinned.forEach(stop => {
@@ -227,6 +262,17 @@ function orderedStops(routeId) {
   return visibleWaypoints().filter(stop => stop.route_id === routeId).sort((a, b) => a.route_id - b.route_id || routeProgress(a) - routeProgress(b));
 }
 
+// Frame the POI's whole route when it fits at a readable zoom; otherwise stay close on the POI.
+function contextCamera(stop) {
+  const bounds = new maplibregl.LngLatBounds();
+  (loaded.get(stop.route_id) || []).forEach(feature => feature.geometry.coordinates.forEach(point => bounds.extend(point)));
+  bounds.extend(stop.coordinates);
+  const fit = map.cameraForBounds(bounds, {padding: {top: 150, bottom: 70, left: 80, right: 80}, maxZoom: 12});
+  return fit && fit.zoom >= CONTEXT_ZOOM
+    ? {center: fit.center, zoom: fit.zoom}
+    : {center: stop.coordinates, zoom: CONTEXT_ZOOM};
+}
+
 function fitFeatures(features, padding = 35, maxZoom = 12, duration = 0) {
   const bounds = new maplibregl.LngLatBounds();
   features.forEach(feature => feature.geometry.coordinates.forEach(point => bounds.extend(point)));
@@ -278,7 +324,60 @@ function selectRoute(route) {
     content.append(link);
   });
   popup?.remove();
-  popup = new maplibregl.Popup({maxWidth: '300px', anchor: 'center'}).setLngLat(bounds.getCenter()).setDOMContent(content).addTo(map);
+  popup = undefined;
+  const show = () => {
+    if (selected !== route.id) return;
+    popup?.remove();
+    const spot = popupSpot(route);
+    popup = new maplibregl.Popup({maxWidth: '300px', anchor: spot?.anchor || 'center', offset: spot ? 16 : 0})
+      .setLngLat(spot?.lngLat || bounds.getCenter()).setDOMContent(content).addTo(map);
+  };
+  if (map.isMoving()) map.once('moveend', show); else show();
+}
+
+// Anchor the popup beside the route with its pointer touching the line, clear of photo stacks and the line itself.
+function popupSpot(route) {
+  const canvas = map.getCanvas();
+  const width = canvas.clientWidth, height = canvas.clientHeight;
+  const popupW = Math.min(300, width - 24), popupH = 190, gap = 20, margin = 8;
+  const origin = container.getBoundingClientRect();
+  // Measure the drawn cards, badges, and dots (the button box is smaller than a fanned stack).
+  const pad = 12;
+  const boxes = [...markers.values()].map(marker => marker.getElement()).filter(element => !element.hidden)
+    .flatMap(element => [...element.querySelectorAll('.waypoint-preview-card, .waypoint-preview-count, .waypoint-dot-core')])
+    .filter(part => part.offsetParent)
+    .map(part => {
+      const rect = part.getBoundingClientRect();
+      return {left: rect.left - origin.left - pad, right: rect.right - origin.left + pad, top: rect.top - origin.top - pad, bottom: rect.bottom - origin.top + pad};
+    });
+  const line = (loaded.get(route.id) || []).filter(feature => activeFilter === 'all' || feature.properties.activity_type === activeFilter)
+    .flatMap(feature => feature.geometry.coordinates).map(point => map.project(point));
+  if (line.length < 2) return undefined;
+  const centre = line.reduce((sum, point) => ({x: sum.x + point.x / line.length, y: sum.y + point.y / line.length}), {x: 0, y: 0});
+  const step = Math.max(1, Math.ceil(line.length / 40));
+  let best, bestScore = -Infinity;
+  for (const minimum of [1, 0]) {
+  for (let index = 0; index < line.length; index += step) {
+    const point = line[index];
+    const options = {
+      left: [point.x + gap, point.y - popupH / 2], right: [point.x - gap - popupW, point.y - popupH / 2],
+      top: [point.x - popupW / 2, point.y + gap], bottom: [point.x - popupW / 2, point.y - gap - popupH],
+    };
+    for (const [anchor, [left, top]] of Object.entries(options)) {
+      const right = left + popupW, bottom = top + popupH;
+      if (left < margin || top < margin || right > width - margin || bottom > height - margin) continue;
+      if (right > width - 70 && top < 170) continue;
+      if (line.some(other => other.x > left - 4 && other.x < right + 4 && other.y > top - 4 && other.y < bottom + 4)) continue;
+      const clearance = Math.min(Infinity, ...boxes.map(box =>
+        Math.hypot(Math.max(box.left - right, left - box.right, 0), Math.max(box.top - bottom, top - box.bottom, 0))));
+      if (clearance < minimum) continue;
+      const score = Math.min(clearance, 80) - Math.hypot(point.x - centre.x, point.y - centre.y) / 30;
+      if (score > bestScore) { bestScore = score; best = {anchor, point}; }
+    }
+  }
+  if (best) break;
+  }
+  return best && {anchor: best.anchor, lngLat: map.unproject([best.point.x, best.point.y])};
 }
 
 buttons.forEach(button => button.addEventListener('click', () => {
@@ -493,7 +592,7 @@ async function initialize() {
         if (button.dataset.clusterIds) openList(button);
         else if (map.getZoom() < CONTEXT_MIN_ZOOM && !button.classList.contains('waypoint-numbered')) {
           status.textContent = `Zoomed in on ${stop.name}. Select it again to see its photos.`;
-          map.flyTo({center: stop.coordinates, zoom: CONTEXT_ZOOM, duration: motionDuration()});
+          map.flyTo({...contextCamera(stop), duration: motionDuration()});
         } else openDeck(stop, button);
       });
       markers.set(stop.id, new maplibregl.Marker({element: button, anchor: 'bottom', offset: [0, 8]}).setLngLat(stop.coordinates).addTo(map));

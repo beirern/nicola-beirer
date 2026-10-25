@@ -132,19 +132,27 @@
   .waypoint-level-2 { --w: 68px; --h: 86px; }
   .waypoint-level-3 { --w: 92px; --h: 116px; }
   .waypoint-preview-stack { position: absolute; inset: 0; display: block; }
-  .waypoint-preview-card { position: absolute; bottom: 22px; left: calc(50% - var(--w) / 2); width: var(--w); height: var(--h); box-sizing: border-box; overflow: hidden; padding: 3px; border-radius: 3px; background: #fffaf0; box-shadow: 0 3px 10px #211d1973; transition: transform 160ms ease; }
+  /* Beside the dot, away from the route: no stem, and only the cards take clicks. */
+  .waypoint-side-left, .waypoint-side-right { --lift: 14px; width: calc(var(--w) * 3 + 60px); pointer-events: none; }
+  .waypoint-side-left { --shift: calc(var(--w) * -.74 - 14px); }
+  .waypoint-side-right { --shift: calc(var(--w) * .74 + 14px); }
+  .waypoint-side-left > *, .waypoint-side-right > * { pointer-events: auto; }
+  .waypoint-side-left .waypoint-preview-stack, .waypoint-side-right .waypoint-preview-stack { pointer-events: none; }
+  .waypoint-side-left .waypoint-preview-card, .waypoint-side-right .waypoint-preview-card { pointer-events: auto; }
+  .waypoint-side-left .waypoint-stem, .waypoint-side-right .waypoint-stem { display: none; }
+  .waypoint-preview-card { position: absolute; bottom: var(--lift, 22px); left: calc(50% - var(--w) / 2); transform: translateX(var(--shift, 0px)); width: var(--w); height: var(--h); box-sizing: border-box; overflow: hidden; padding: 3px; border-radius: 3px; background: #fffaf0; box-shadow: 0 3px 10px #211d1973; transition: transform 160ms ease; }
   .waypoint-preview-card img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .waypoint-preview-card-0 { z-index: 3; }
-  .waypoint-preview-card-1 { z-index: 2; transform: translate(calc(var(--w) * var(--spread) * -1), -2px) rotate(-8deg); }
-  .waypoint-preview-card-2 { z-index: 1; transform: translate(calc(var(--w) * var(--spread)), -2px) rotate(8deg); }
-  .waypoint-preview-count { position: absolute; z-index: 6; bottom: 10px; left: calc(50% + var(--w) / 2 - 12px); min-width: 24px; height: 24px; box-sizing: border-box; display: grid; place-items: center; padding: 0 4px; border-radius: 12px; border: 2px solid #fffaf0; background: #a8532e; color: #fffaf0; font-size: 11px; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px #211d1973; }
-  .waypoint-merged .waypoint-preview-count { left: auto; right: calc(50% - var(--w) / 2 - 10px); padding: 0 10px; }
+  .waypoint-preview-card-1 { z-index: 2; transform: translate(calc(var(--w) * var(--spread) * -1 + var(--shift, 0px)), -2px) rotate(-8deg); }
+  .waypoint-preview-card-2 { z-index: 1; transform: translate(calc(var(--w) * var(--spread) + var(--shift, 0px)), -2px) rotate(8deg); }
+  .waypoint-preview-count { position: absolute; z-index: 6; bottom: calc(var(--lift, 22px) - 12px); left: calc(50% + var(--w) / 2 - 12px + var(--shift, 0px)); min-width: 24px; height: 24px; box-sizing: border-box; display: grid; place-items: center; padding: 0 4px; border-radius: 12px; border: 2px solid #fffaf0; background: #a8532e; color: #fffaf0; font-size: 11px; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px #211d1973; }
+  .waypoint-merged .waypoint-preview-count { left: auto; right: calc(50% - var(--w) / 2 - 10px - var(--shift, 0px)); padding: 0 10px; }
   .waypoint-stem { position: absolute; z-index: 1; bottom: 8px; left: calc(50% - 1px); width: 2px; height: 14px; background: #a8532e; }
   .waypoint-dot-core { position: absolute; z-index: 2; bottom: 0; left: calc(50% - 8px); width: 16px; height: 16px; box-sizing: border-box; border: 3px solid #fffaf0; border-radius: 50%; background: #a8532e; box-shadow: 0 2px 6px #211d1980; }
   .waypoint-level-0 .waypoint-preview-card { padding: 2px; }
   .waypoint-level-0 .waypoint-preview-count { min-width: 20px; height: 20px; font-size: 10px; left: calc(50% + var(--w) / 2 - 8px); }
   .waypoint-level-0.waypoint-merged .waypoint-preview-count { left: auto; }
-  .waypoint-preview-button:hover .waypoint-preview-card-0, .waypoint-preview-button:focus-visible .waypoint-preview-card-0 { transform: translateY(-5px); }
+  .waypoint-preview-button:hover .waypoint-preview-card-0, .waypoint-preview-button:focus-visible .waypoint-preview-card-0 { transform: translate(var(--shift, 0px), -5px); }
   @media (prefers-reduced-motion: reduce) { .waypoint-preview-card { transition: none; } }
   .waypoint-numbered { --w: 0px; --h: 0px; width: 44px; height: 44px; }
   .waypoint-numbered .waypoint-preview-stack, .waypoint-numbered .waypoint-stem, .waypoint-numbered .waypoint-dot-core { display: none; }
