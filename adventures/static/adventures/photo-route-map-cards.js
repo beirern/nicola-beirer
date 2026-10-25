@@ -30,6 +30,11 @@ function visibleFeatures() {
   return [...loaded.values()].flat().filter(feature => activeFilter === 'all' || feature.properties.activity_type === activeFilter);
 }
 
+// The overview frames every route, so filtering never zooms into one lone route.
+function allFeatures() {
+  return [...loaded.values()].flat();
+}
+
 function visibleWaypoints() {
   return waypoints.filter(stop => {
     const route = routes.find(item => item.id === stop.route_id);
@@ -393,7 +398,7 @@ resetButton.addEventListener('click', () => {
   popup?.remove();
   popup = undefined;
   map.setFilter('selected-route', ['==', ['get', 'route_id'], -1]);
-  fitFeatures(visibleFeatures(), 35, 12, motionDuration());
+  fitFeatures(allFeatures(), 35, 12, motionDuration());
 });
 
 document.querySelectorAll('[data-route-filter]').forEach(button => button.addEventListener('click', () => {
@@ -410,7 +415,7 @@ document.querySelectorAll('[data-route-filter]').forEach(button => button.addEve
     const filter = activeFilter === 'all' ? null : ['==', ['get', 'activity_type'], activeFilter];
     ['route-lines', 'route-hit-area'].forEach(layer => map.setFilter(layer, filter));
     map.setFilter('selected-route', ['==', ['get', 'route_id'], -1]);
-    fitFeatures(visibleFeatures());
+    fitFeatures(allFeatures());
   }
   popup?.remove();
   buttons.forEach(item => item.setAttribute('aria-pressed', 'false'));
