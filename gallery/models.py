@@ -6,6 +6,8 @@ from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.fields import RichTextField
 from wagtail.models import Orderable, Page
 
+from nicolabeirer.renditions import GALLERY_PHOTO, warm
+
 
 class StaffOnlyGalleryMixin:
     def serve(self, request, *args, **kwargs):
@@ -110,6 +112,10 @@ class GalleryPhoto(Orderable):
         FieldPanel('location'),
         FieldPanel('adventure_page'),
     ]
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        warm(self.image, GALLERY_PHOTO)
 
     def __str__(self):
         return self.caption or f"Photo {self.sort_order}"

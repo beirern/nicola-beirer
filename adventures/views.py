@@ -10,10 +10,8 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.cache import get_conditional_response
 
-from adventures.models import (
-    AdventurePage, Route, Waypoint, WaypointPhoto,
-    WAYPOINT_PHOTO_FILTER, WAYPOINT_PREVIEW_FILTER,
-)
+from adventures.models import AdventurePage, Route, Waypoint, WaypointPhoto
+from nicolabeirer.renditions import WAYPOINT_PHOTO_FILTER, WAYPOINT_PREVIEW_FILTER
 
 
 def public_routes():

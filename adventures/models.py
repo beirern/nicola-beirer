@@ -1,5 +1,4 @@
 from datetime import date, datetime
-import logging
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -16,8 +15,7 @@ from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Orderable, Page
 
 from blog.models import standard_body_blocks
-
-logger = logging.getLogger(__name__)
+from nicolabeirer.renditions import WAYPOINT_PHOTO, warm
 
 
 class AdventurePageTag(TaggedItemBase):
@@ -80,10 +78,6 @@ def photo_taken_on(image):
         return None
 
 
-WAYPOINT_PREVIEW_FILTER = 'fill-120x150'
-WAYPOINT_PHOTO_FILTER = 'width-1200'
-
-
 class WaypointPhoto(Orderable):
     waypoint = ParentalKey(Waypoint, related_name='photos', on_delete=models.CASCADE)
     image = models.ForeignKey('wagtailimages.Image', on_delete=models.PROTECT, related_name='+')
@@ -103,11 +97,7 @@ class WaypointPhoto(Orderable):
 
     def warm_renditions(self):
         """Resize now so visitors never wait on the first map load or photo open."""
-        for spec in (WAYPOINT_PREVIEW_FILTER, WAYPOINT_PHOTO_FILTER):
-            try:
-                self.image.get_rendition(spec)
-            except OSError:
-                logger.warning('Could not build %s rendition for image %s', spec, self.image_id)
+        warm(self.image, WAYPOINT_PHOTO)
 
 
 class AdventureWaypoint(Orderable):
