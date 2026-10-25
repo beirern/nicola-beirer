@@ -528,11 +528,11 @@ async function initialize() {
       container,
       center: [0, 25], zoom: 1,
       scrollZoom: false,
-      style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+      style: 'https://api.maptiler.com/maps/01a17198-5261-74f2-923d-4f19ac3cb5c2/style.json',
       transformRequest: url => {
         const requestUrl = new URL(url, window.location.href);
-        if (['basemaps.cartocdn.com', 'tiles.basemaps.cartocdn.com'].includes(requestUrl.hostname)) {
-          requestUrl.searchParams.set('key', container.dataset.cartoKey);
+        if (requestUrl.hostname === 'api.maptiler.com') {
+          requestUrl.searchParams.set('key', container.dataset.maptilerKey);
         }
         return {url: requestUrl.href};
       },
@@ -550,26 +550,6 @@ async function initialize() {
     }));
     const features = results.filter(result => result.status === 'fulfilled').flatMap(result => result.value);
     await new Promise(resolve => map.isStyleLoaded() ? resolve() : map.once('load', resolve));
-    // Shaded relief under water, roads, and labels; free elevation tiles, no key needed.
-    map.addSource('terrain', {
-      type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 14,
-      tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-      attribution: 'Terrain: Mapzen, AWS Terrain Tiles',
-    });
-    map.addLayer({
-      id: 'hillshade', type: 'hillshade', source: 'terrain',
-      paint: {
-        'hillshade-exaggeration': 0.45,
-        'hillshade-shadow-color': '#6b5a3e',
-        'hillshade-highlight-color': '#fffaf0',
-        'hillshade-accent-color': '#8a7a5f',
-      },
-    }, map.getLayer('water') ? 'water' : undefined);
-    // The basemap hides country names until zoom 2-3; show them when fully zoomed out.
-    ['place_country_1', 'place_country_2'].forEach(id => {
-      const layer = map.getLayer(id);
-      if (layer) map.setLayerZoomRange(id, 0, layer.maxzoom ?? 24);
-    });
     map.addSource('routes', {type: 'geojson', data: {type: 'FeatureCollection', features}});
     const filter = activeFilter === 'all' ? undefined : ['==', ['get', 'activity_type'], activeFilter];
     map.addLayer({id: 'route-lines', type: 'line', source: 'routes', ...(filter ? {filter} : {}), paint: {'line-color': ['get', 'color'], 'line-width': 3, 'line-opacity': 0.85}});

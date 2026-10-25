@@ -186,7 +186,7 @@ import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-
   if (!geojson.features.some(feature => feature.geometry.coordinates.length)) return;
 
   // ── Map ──────────────────────────────────────────────────────────────────
-  const cartoKey = '{{ carto_api_key|escapejs }}';
+  const maptilerKey = '{{ maptiler_api_key|escapejs }}';
   const trackColors = ['#a8532e', '#57683f', '#3f5a76', '#7d5a35', '#8a5a3c'];
   geojson.features.forEach((feature, i) => {
     feature.properties = { ...feature.properties, _color: trackColors[i % trackColors.length] };
@@ -194,12 +194,11 @@ import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-
 
   const map = new maplibregl.Map({
     container: 'adventure-map',
-    style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+    style: 'https://api.maptiler.com/maps/01a17198-5261-74f2-923d-4f19ac3cb5c2/style.json',
     transformRequest: (url) => {
       const requestUrl = new URL(url, window.location.href);
-      if (requestUrl.hostname === 'basemaps.cartocdn.com' ||
-          requestUrl.hostname === 'tiles.basemaps.cartocdn.com') {
-        requestUrl.searchParams.set('key', cartoKey);
+      if (requestUrl.hostname === 'api.maptiler.com') {
+        requestUrl.searchParams.set('key', maptilerKey);
       }
       return { url: requestUrl.href };
     },

@@ -5,5 +5,5 @@ def app_version(request):
     return {"app_version": settings.APP_VERSION}
 
 
-def carto_key(request):
-    return {'carto_api_key': settings.CARTO_API_KEY}
+def maptiler_key(request):
+    return {'maptiler_api_key': settings.MAPTILER_API_KEY}

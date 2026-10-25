@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.shortcuts import render
 from adventures.views import route_manifest, waypoint_manifest
 
@@ -37,7 +36,6 @@ def home(request):
             for value, label in Route.ActivityType.choices
             if value in visible_activities
         ],
-        'carto_api_key': settings.CARTO_API_KEY,
         'recent_posts': BlogPage.objects.live().order_by('-date')[:3],
         'recent_projects': ResumeProject.objects.all()[:3],
     }

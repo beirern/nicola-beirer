@@ -213,5 +213,5 @@ restored.save_revision().publish()
 assert AdventureWaypoint.objects.filter(page_id=page.pk).count() == 2
 assert Waypoint.objects.count() == 3
 '''
-        result = subprocess.run([sys.executable, '-c', script], env={**os.environ, 'CARTO_API_KEY': os.environ.get('CARTO_API_KEY', '')}, capture_output=True, text=True)
+        result = subprocess.run([sys.executable, '-c', script], env={**os.environ, 'MAPTILER_API_KEY': os.environ.get('MAPTILER_API_KEY', '')}, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

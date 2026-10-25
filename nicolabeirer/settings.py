@@ -39,7 +39,7 @@ CSRF_TRUSTED_ORIGINS = (
     else []
 )
 
-CARTO_API_KEY = os.environ["CARTO_API_KEY"]
+MAPTILER_API_KEY = os.environ["MAPTILER_API_KEY"]
 
 # Application definition
 
@@ -100,7 +100,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "nicolabeirer.context_processors.app_version",
-                "nicolabeirer.context_processors.carto_key",
+                "nicolabeirer.context_processors.maptiler_key",
             ],
         },
     },

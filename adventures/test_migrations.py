@@ -86,7 +86,7 @@ assert draft.adventure_routes.all()[1].route_id == other.pk
 """
         result = subprocess.run(
             [sys.executable, '-c', script],
-            env={**os.environ, 'CARTO_API_KEY': os.environ.get('CARTO_API_KEY', '')},
+            env={**os.environ, 'MAPTILER_API_KEY': os.environ.get('MAPTILER_API_KEY', '')},
             capture_output=True,
             text=True,
         )

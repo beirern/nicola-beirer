@@ -458,7 +458,7 @@ class AdventurePage(Page):
 
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        context['carto_api_key'] = settings.CARTO_API_KEY
+        context['maptiler_api_key'] = settings.MAPTILER_API_KEY
         route_ids = [route.pk for route in self.selected_recordings]
         context['route_urls'] = [
             reverse('adventure-route-geojson', args=[route_id])

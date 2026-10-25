@@ -9,11 +9,11 @@ async function initializeWaypointEditor() {
   const maplibregl = await import('https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.mjs');
   const map = new maplibregl.Map({
     container, center: [0, 25], zoom: 1, scrollZoom: false,
-    style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+    style: 'https://api.maptiler.com/maps/01a17198-5261-74f2-923d-4f19ac3cb5c2/style.json',
     transformRequest: url => {
       const requested = new URL(url, window.location.href);
-      if (['basemaps.cartocdn.com', 'tiles.basemaps.cartocdn.com'].includes(requested.hostname)) {
-        requested.searchParams.set('key', container.dataset.cartoKey);
+      if (requested.hostname === 'api.maptiler.com') {
+        requested.searchParams.set('key', container.dataset.maptilerKey);
       }
       return {url: requested.href};
     },
