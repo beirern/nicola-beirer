@@ -26,6 +26,14 @@ class AdventurePageTag(TaggedItemBase):
     )
 
 
+class WaypointMapPanel(HelpPanel):
+    class BoundPanel(HelpPanel.BoundPanel):
+        def get_context_data(self, parent_context=None):
+            context = super().get_context_data(parent_context)
+            context['maptiler_api_key'] = settings.MAPTILER_API_KEY
+            return context
+
+
 class Waypoint(ClusterableModel):
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=500, blank=True)
@@ -40,7 +48,7 @@ class Waypoint(ClusterableModel):
         FieldPanel('description'),
         FieldPanel('latitude'),
         FieldPanel('longitude'),
-        HelpPanel(template='adventures/admin/waypoint_map.html'),
+        WaypointMapPanel(template='adventures/admin/waypoint_map.html'),
         InlinePanel('photos', label='Photos'),
         FieldPanel('is_public'),
     ]
