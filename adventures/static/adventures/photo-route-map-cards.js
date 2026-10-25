@@ -393,12 +393,12 @@ resetButton.addEventListener('click', () => {
   closeDeck(false);
   closeList();
   selected = undefined;
-  updateMarkers();
   buttons.forEach(button => button.setAttribute('aria-pressed', 'false'));
   popup?.remove();
   popup = undefined;
   map.setFilter('selected-route', ['==', ['get', 'route_id'], -1]);
   fitFeatures(allFeatures(), 35, 12, motionDuration());
+  if (!map.isMoving()) updateMarkers();
 });
 
 document.querySelectorAll('[data-route-filter]').forEach(button => button.addEventListener('click', () => {
@@ -528,6 +528,10 @@ async function initialize() {
       container,
       center: [0, 25], zoom: 1,
       scrollZoom: false,
+      // Let in-flight tiles finish and keep more of them, so zooming back doesn't redraw blurry placeholders.
+      cancelPendingTileRequestsWhileZooming: false,
+      maxTileCacheSize: 400,
+      maxTileCacheZoomLevels: 8,
       style: 'https://api.maptiler.com/maps/01a17198-5261-74f2-923d-4f19ac3cb5c2/style.json',
       transformRequest: url => {
         const requestUrl = new URL(url, window.location.href);
@@ -583,6 +587,9 @@ async function initialize() {
       markers.set(stop.id, new maplibregl.Marker({element: button, anchor: 'bottom', offset: [0, 8]}).setLngLat(stop.coordinates).addTo(map));
     });
     map.on('moveend', updateMarkers);
+    // Keep stack size in step with the zoom while an animation runs, not only once it ends.
+    let frame;
+    map.on('zoom', () => { frame ??= requestAnimationFrame(() => { frame = undefined; updateMarkers(); }); });
     map.on('resize', updateMarkers);
     map.on('click', () => closeList());
     updateMarkers();
