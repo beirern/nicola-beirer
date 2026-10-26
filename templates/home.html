@@ -14,10 +14,7 @@
   <div class="border-t border-[#e3d5bc] pt-5 mb-4">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
       <h2 id="routes-heading" class="font-serif text-xl font-semibold">Routes on the map</h2>
-      <div class="flex flex-wrap items-center gap-4">
-        {% include "adventures/includes/unit_toggle.html" %}
-        <a href="/adventures/" class="text-accent text-sm hover:text-[#7c3c1f]">see all adventures →</a>
-      </div>
+      <a href="/adventures/" class="text-accent text-sm hover:text-[#7c3c1f]">see all adventures →</a>
     </div>
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div class="flex flex-wrap gap-2" role="group" aria-label="Filter routes by activity">
@@ -46,7 +43,10 @@
       <nav class="waypoint-deck-strip" data-deck-strip aria-label="Points of interest along the route" hidden></nav>
     </div>
   </div>
-  <p id="routes-map-status" class="text-sm text-[#8a7a5f] mt-2 mb-4" role="status">Explore the routes below. The interactive map loads as you scroll here.</p>
+  <div class="flex flex-wrap items-center justify-between gap-3 mt-2 mb-4">
+    <p id="routes-map-status" class="text-sm text-[#8a7a5f]" role="status">Explore the routes below. The interactive map loads as you scroll here.</p>
+    {% include "adventures/includes/unit_toggle.html" %}
+  </div>
   <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-64 overflow-y-auto" aria-label="Routes">
     {% for route in map_routes %}
     <li data-route-item data-modes="{{ route.activity_types|join:' ' }}" class="border border-[#e3d5bc] rounded p-3">
