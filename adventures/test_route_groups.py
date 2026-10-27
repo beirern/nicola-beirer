@@ -1,3 +1,4 @@
+from datetime import date
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -97,6 +98,59 @@ class RouteGroupTests(TestCase):
         self.assertFalse(group.geojson_file)
         self.assertEqual(group.parsed_stats, {})
         self.assertEqual(group.activity_type, '')
+
+    def test_manual_dates_save_without_reparsing_and_fall_back_when_cleared(self):
+        route = self.recording(mode='flying', is_public=True)
+        recorded_start, recorded_end = route.date_start, route.date_end
+        flight_date = date(2025, 4, 12)
+        with patch('adventures.services.parse_route_file') as parser:
+            form = self.form(
+                self.group_data(
+                    kind='recording', name=route.name, activity_type='flying',
+                    is_public='on', manual_date_start='2025-04-12',
+                    manual_date_end='2025-04-12',
+                ), instance=route,
+            )
+            self.assertTrue(form.is_valid(), form.errors)
+            form.save()
+            parser.assert_not_called()
+        route.refresh_from_db()
+        self.assertEqual(route.date_start, flight_date)
+        self.assertEqual(route.date_end, flight_date)
+        self.assertIn(route, public_routes())
+        group = self.group()
+        route.parent_route = group
+        route.save()
+        self.assertEqual(group.date_start, flight_date)
+        self.assertEqual(group.date_end, flight_date)
+        route.manual_date_start = route.manual_date_end = None
+        route.save()
+        route.refresh_from_db()
+        self.assertEqual(route.date_start, recorded_start)
+        self.assertEqual(route.date_end, recorded_end)
+
+    def test_manual_dates_reject_reversed_range(self):
+        route = self.recording(
+            manual_date_start=date(2025, 4, 13),
+            manual_date_end=date(2025, 4, 12),
+        )
+        with self.assertRaisesMessage(ValidationError, 'end date'):
+            route.full_clean()
+
+    def test_undated_flight_can_use_manual_dates(self):
+        flight_date = date(2025, 4, 12)
+        route = Route.objects.create(
+            name='Approximate Taiwan flight', activity_type='flying',
+            file=SimpleUploadedFile('flight.gpx', b'''<gpx version="1.1" creator="test">
+                <trk><trkseg><trkpt lat="25.0" lon="121.5"/>
+                <trkpt lat="24.8" lon="121.2"/></trkseg></trk></gpx>'''),
+            manual_date_start=flight_date, manual_date_end=flight_date,
+        )
+        route.refresh_from_db()
+        self.assertIsNone(route.parsed_stats['date_start'])
+        self.assertEqual(route.date_start, flight_date)
+        self.assertEqual(route.date_end, flight_date)
+        self.assertEqual(route.parsed_stats['moving_time_s'], 0)
 
     def test_selection_expands_groups_and_deduplicates_recordings(self):
         group = self.group()

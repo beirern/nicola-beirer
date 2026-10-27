@@ -140,6 +140,14 @@ class Route(models.Model):
         default=ActivityType.CYCLING,
         blank=True,
     )
+    manual_date_start = models.DateField(
+        'Start date', null=True, blank=True,
+        help_text='Optional. Overrides the start date from the recording or group legs.',
+    )
+    manual_date_end = models.DateField(
+        'End date', null=True, blank=True,
+        help_text='Optional. Overrides the end date from the recording or group legs. For a single-day route, set both dates to the same day.',
+    )
     file = models.FileField(
         upload_to='activity_files/',
         default='',
@@ -162,6 +170,10 @@ class Route(models.Model):
         FieldPanel('kind'),
         FieldPanel('name'),
         FieldPanel('description'),
+        MultiFieldPanel(
+            [FieldPanel('manual_date_start'), FieldPanel('manual_date_end')],
+            heading='Dates',
+        ),
         MultiFieldPanel(
             [FieldPanel('activity_type'), FieldPanel('file')],
             heading='Recording',
@@ -312,6 +324,8 @@ class Route(models.Model):
     def clean(self):
         super().clean()
         self.validate_structure()
+        if self.date_start and self.date_end and self.date_end < self.date_start:
+            raise ValidationError('The end date must be on or after the start date.')
         if self.kind == self.Kind.RECORDING and not self.file and not self.geojson_file:
             raise ValidationError({'file': 'Upload a GPX or FIT recording.'})
         if self.file and self._file_changed():
@@ -356,6 +370,8 @@ class Route(models.Model):
 
     @property
     def date_start(self):
+        if self.manual_date_start:
+            return self.manual_date_start
         if self.kind == self.Kind.GROUP:
             return min(
                 (route.date_start for route in self.recordings if route.date_start),
@@ -369,6 +385,8 @@ class Route(models.Model):
 
     @property
     def date_end(self):
+        if self.manual_date_end:
+            return self.manual_date_end
         if self.kind == self.Kind.GROUP:
             return max(
                 (route.date_end for route in self.recordings if route.date_end),
