@@ -122,6 +122,8 @@ class Route(models.Model):
         CYCLING = 'cycling', 'Cycling'
         MOUNTAINEERING = 'mountaineering', 'Mountaineering'
         FLYING = 'flying', 'Flying'
+        TRAIN = 'train', 'Train'
+        COMMERCIAL_FLIGHT = 'commercial_flight', 'Commercial flight'
 
     class Kind(models.TextChoices):
         RECORDING = 'recording', 'Recording'
