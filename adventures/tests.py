@@ -256,6 +256,23 @@ class RouteLibraryTests(TestCase):
             response.context['activity_filters'][1]['color'], '#62558f'
         )
 
+    def test_home_renders_each_route_activity_type(self):
+        route = self.route(is_public=True)
+        for value, label in Route.ActivityType.choices:
+            with self.subTest(activity_type=value):
+                route.activity_type = value
+                route.save(update_fields=['activity_type'])
+
+                response = self.client.get('/')
+
+                self.assertEqual(response.status_code, 200)
+                filters = response.context['activity_filters']
+                self.assertEqual(len(filters), 1)
+                self.assertEqual(filters[0]['value'], value)
+                self.assertEqual(filters[0]['label'], label)
+                self.assertContains(response, f'data-route-filter="{value}"')
+                self.assertContains(response, f'data-route-color="{filters[0]["color"]}"')
+
     def test_overrides_do_not_change_daily_averages(self):
         route = self.route()
         self.link(route)

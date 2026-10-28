@@ -10,6 +10,8 @@ ROUTE_ACTIVITY_COLORS = {
     'cycling': '#a8532e',
     'mountaineering': '#62558f',
     'flying': '#285a91',
+    'train': '#397563',
+    'commercial_flight': '#538baf',
 }
 
 
