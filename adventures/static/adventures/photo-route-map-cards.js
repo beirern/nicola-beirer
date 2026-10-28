@@ -9,6 +9,7 @@ const colors = Object.fromEntries(
   [...document.querySelectorAll('[data-route-color]')].map(button => [button.dataset.routeFilter, button.dataset.routeColor])
 );
 let map, popup, selected, activeFilter = 'all';
+let showPhotos = true;
 let activeDeck, activePhotos = [], photoIndex = 0, activeMarker, deckRequest = 0;
 const markers = new Map();
 const loaded = new Map();
@@ -36,6 +37,7 @@ function allFeatures() {
 }
 
 function visibleWaypoints() {
+  if (!showPhotos) return [];
   return waypoints.filter(stop => {
     const route = routes.find(item => item.id === stop.route_id);
     return route && (!selected || selected === stop.route_id) &&
@@ -399,6 +401,16 @@ resetButton.addEventListener('click', () => {
   map.setFilter('selected-route', ['==', ['get', 'route_id'], -1]);
   fitFeatures(allFeatures(), 35, 12, motionDuration());
   if (!map.isMoving()) updateMarkers();
+});
+
+document.querySelector('[data-toggle-photos]').addEventListener('click', event => {
+  showPhotos = !showPhotos;
+  event.currentTarget.textContent = showPhotos ? 'Hide photos' : 'Show photos';
+  if (!showPhotos) {
+    closeDeck(false);
+    closeList();
+  }
+  updateMarkers();
 });
 
 document.querySelectorAll('[data-route-filter]').forEach(button => button.addEventListener('click', () => {

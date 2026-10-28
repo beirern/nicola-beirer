@@ -23,7 +23,10 @@
         <button type="button" class="route-filter" data-route-filter="{{ activity.value }}" data-route-color="{{ activity.color }}" aria-pressed="false"><span aria-hidden="true" style="color:{{ activity.color }}">●</span> {{ activity.label }}</button>
         {% endfor %}
       </div>
-      <button type="button" class="route-reset" data-reset-map disabled>Reset map view</button>
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" class="route-reset" data-toggle-photos aria-controls="routes-map waypoint-list waypoint-deck">Hide photos</button>
+        <button type="button" class="route-reset" data-reset-map disabled>Reset map view</button>
+      </div>
     </div>
   </div>
   <div class="routes-map-shell">
