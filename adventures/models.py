@@ -120,6 +120,7 @@ class Route(models.Model):
 
     class ActivityType(models.TextChoices):
         CYCLING = 'cycling', 'Cycling'
+        HIKING = 'hiking', 'Hiking'
         MOUNTAINEERING = 'mountaineering', 'Mountaineering'
         FLYING = 'flying', 'Flying'
         TRAIN = 'train', 'Train'
