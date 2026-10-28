@@ -96,6 +96,42 @@ GPX = b"""<?xml version="1.0"?>
 </trkseg></trk></gpx>"""
 
 
+class GpxDistanceTests(SimpleTestCase):
+    def test_untimed_track_uses_geometry_without_joining_segments(self):
+        gpx = b"""<gpx version="1.1" creator="test"
+        xmlns="http://www.topografix.com/GPX/1/1"><trk>
+          <trkseg><trkpt lat="0" lon="0"/><trkpt lat="0" lon="0.01"/></trkseg>
+          <trkseg><trkpt lat="10" lon="10"/><trkpt lat="10" lon="10.01"/></trkseg>
+        </trk></gpx>"""
+
+        stats = parse_gpx_file(io.BytesIO(gpx))['stats']
+
+        self.assertAlmostEqual(stats['distance_km'], 2.21, delta=0.01)
+        self.assertEqual(stats['moving_time_s'], 0)
+        self.assertEqual(stats['elapsed_time_s'], 0)
+        self.assertEqual(stats['avg_speed_kmh'], 0)
+        self.assertEqual(stats['activity_dates'], [])
+        self.assertIsNone(stats['date_start'])
+        self.assertIsNone(stats['date_end'])
+
+    def test_timed_recording_keeps_moving_distance_and_duration(self):
+        stats = parse_gpx_file(io.BytesIO(GPX))['stats']
+
+        self.assertAlmostEqual(stats['distance_km'], 1.113, delta=0.01)
+        self.assertEqual(stats['moving_time_s'], 600)
+        self.assertEqual(stats['elapsed_time_s'], 600)
+        self.assertEqual(stats['activity_dates'], ['2026-10-01'])
+
+    def test_timed_stationary_drift_does_not_use_geometry_fallback(self):
+        gpx = GPX.replace(b'40.010', b'40.00001')
+
+        stats = parse_gpx_file(io.BytesIO(gpx))['stats']
+
+        self.assertEqual(stats['distance_km'], 0)
+        self.assertEqual(stats['moving_time_s'], 0)
+        self.assertEqual(stats['elapsed_time_s'], 600)
+
+
 @override_settings(
     STORAGES={
         'default': {'BACKEND': 'django.core.files.storage.InMemoryStorage'},

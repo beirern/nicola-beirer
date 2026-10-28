@@ -229,7 +229,10 @@ def parse_gpx_file(file_obj):
     moving_data = gpx.get_moving_data()
     uphill_downhill = gpx.get_uphill_downhill()
 
-    distance_km = round((moving_data.moving_distance if moving_data else 0) / 1000, 3)
+    distance_m = moving_data.moving_distance if moving_data else 0
+    if not timestamps:
+        distance_m = sum(track.length_3d() for track in gpx.tracks)
+    distance_km = round(distance_m / 1000, 3)
     moving_time_s = round(float(moving_data.moving_time if moving_data else 0), 1)
 
     elapsed_time_s = 0.0
