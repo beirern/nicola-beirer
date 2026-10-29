@@ -552,6 +552,9 @@ function stepPhoto(delta) {
 }
 
 deck.querySelector('[data-deck-close]').addEventListener('click', () => closeDeck());
+deck.addEventListener('click', event => {
+  if (event.target === deck || event.target.matches('.waypoint-deck-scrim, .waypoint-deck-body, .waypoint-deck-stage')) closeDeck();
+});
 deck.querySelector('[data-deck-prev]').addEventListener('click', () => stepPhoto(-1));
 deck.querySelector('[data-deck-next]').addEventListener('click', () => stepPhoto(1));
 deck.addEventListener('keydown', event => {

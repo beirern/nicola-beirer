@@ -55,11 +55,11 @@
 <!-- Lightbox -->
 <div id="lightbox" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center" onclick="if(event.target===this)closeLightbox()">
   <button onclick="closeLightbox()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl cursor-pointer z-10">&times;</button>
-  <button onclick="navLightbox(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-3xl cursor-pointer z-10">&#8249;</button>
-  <button onclick="navLightbox(1)" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-3xl cursor-pointer z-10">&#8250;</button>
-  <div class="max-w-5xl max-h-[90vh] flex flex-col items-center px-12">
-    <img id="lb-img" src="" alt="" class="max-w-full max-h-[75vh] object-contain rounded">
-    <div class="mt-3 text-center">
+  <button onclick="navLightbox(-1)" class="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 text-white/80 md:text-gray-400 drop-shadow hover:text-white text-3xl cursor-pointer z-10">&#8249;</button>
+  <button onclick="navLightbox(1)" class="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 text-white/80 md:text-gray-400 drop-shadow hover:text-white text-3xl cursor-pointer z-10">&#8250;</button>
+  <div class="w-full md:w-auto max-w-5xl max-h-[100dvh] flex flex-col items-center md:px-12">
+    <img id="lb-img" src="" alt="" class="w-full md:w-auto max-w-full max-h-[85dvh] md:max-h-[75vh] object-contain md:rounded">
+    <div class="mt-3 px-4 md:px-0 text-center">
       <p id="lb-caption" class="text-gray-300 text-sm"></p>
       <p id="lb-location" class="text-gray-500 text-xs mt-1"></p>
       <a id="lb-adventure" href="#" class="text-[#e3a97e] text-xs hover:underline mt-1 hidden"></a>
