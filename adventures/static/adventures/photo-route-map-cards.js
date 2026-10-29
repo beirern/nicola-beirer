@@ -36,6 +36,8 @@ const CONTEXT_MIN_ZOOM = 7;
 const CONTEXT_ZOOM = 8.5;
 const LEVEL_CARD = [[32, 40], [46, 58], [68, 86], [92, 116]];
 const LEVEL_MERGE_PX = [64, 88, 124, 164];
+// Share of the merge distance within which stacks from different routes still combine (by centre distance).
+const CROSS_ROUTE_MERGE = 0.35;
 let deckStops = [];
 let listIds, listNumbers = new Map(), listOpener;
 const list = document.getElementById('waypoint-list');
@@ -98,12 +100,13 @@ function updateMarkers() {
   const pinned = stops.filter(stop => listIds?.includes(stop.id));
   const free = stops.filter(stop => !listIds?.includes(stop.id));
   const points = free.map(stop => ({stop, point: map.project(stop.coordinates)}));
-  // POIs from different routes only merge when much closer, so nearby routes keep separate stacks.
-  const touches = (a, b) => Math.hypot(a.point.x - b.point.x, a.point.y - b.point.y) <
-    LEVEL_MERGE_PX[level] * (a.stop.route_id === b.stop.route_id ? 1 : 0.5);
+  // Stops chain into stacks within their own route. Stacks from different routes only merge when their centres nearly
+  // coincide, so a chain of stops along one coast cannot pull in a neighbouring trip.
+  const reach = LEVEL_MERGE_PX[level];
   const groups = [];
   points.forEach(item => {
-    const touching = groups.filter(group => group.some(member => touches(member, item)));
+    const touching = groups.filter(group => group.some(member =>
+      member.stop.route_id === item.stop.route_id && Math.hypot(member.point.x - item.point.x, member.point.y - item.point.y) < reach));
     if (!touching.length) groups.push([item]);
     else {
       const first = touching[0];
@@ -114,6 +117,21 @@ function updateMarkers() {
       });
     }
   });
+  const centreOf = group => ({x: group.reduce((sum, {point}) => sum + point.x, 0) / group.length, y: group.reduce((sum, {point}) => sum + point.y, 0) / group.length});
+  for (let merging = true; merging;) {
+    merging = false;
+    const centres = groups.map(centreOf);
+    for (let i = 0; i < groups.length && !merging; i++) {
+      for (let j = i + 1; j < groups.length; j++) {
+        if (Math.hypot(centres[i].x - centres[j].x, centres[i].y - centres[j].y) < reach * CROSS_ROUTE_MERGE) {
+          groups[i].push(...groups[j]);
+          groups.splice(j, 1);
+          merging = true;
+          break;
+        }
+      }
+    }
+  }
   const lines = new Map();
   const visibleIds = new Set(stops.map(stop => stop.id));
   markers.forEach(marker => {
