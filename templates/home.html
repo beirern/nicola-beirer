@@ -20,7 +20,7 @@
       <div class="flex flex-wrap gap-2" role="group" aria-label="Filter routes by activity">
         <button type="button" class="route-filter" data-route-filter="all" aria-pressed="true">All routes</button>
         {% for activity in activity_filters %}
-        <button type="button" class="route-filter" data-route-filter="{{ activity.value }}" data-route-color="{{ activity.color }}" aria-pressed="false"><span aria-hidden="true" style="color:{{ activity.color }}">●</span> {{ activity.label }}</button>
+        <button type="button" class="route-filter" data-route-filter="{{ activity.value }}" data-route-color="{{ activity.color }}" aria-pressed="false">{% if activity.value == 'train' %}<span class="route-swatch route-swatch-dashed" aria-hidden="true" style="color:{{ activity.color }}"></span>{% elif activity.value == 'commercial_flight' %}<span class="route-swatch route-swatch-dotted" aria-hidden="true" style="color:{{ activity.color }}"></span>{% else %}<span aria-hidden="true" style="color:{{ activity.color }}">●</span>{% endif %} {{ activity.label }}</button>
         {% endfor %}
       </div>
       <div class="flex flex-wrap items-center gap-2">
@@ -206,6 +206,8 @@
   .maplibregl-popup-content p { margin-top: 6px; }
   .maplibregl-popup-content a { color: #a8532e; margin-top: 8px; }
   .route-filter, .route-reset { padding: 5px 12px; border: 1px solid #e3d5bc; border-radius: 4px; font-size: 14px; }
+  .route-swatch { display: inline-block; width: 18px; vertical-align: middle; border-top: 3px dashed currentColor; }
+  .route-swatch-dotted { border-top-style: dotted; }
   .route-filter[aria-pressed="true"] { background: #efe4cd; border-color: #8a7a5f; }
   .route-reset:disabled { opacity: 0.5; cursor: not-allowed; }
   .route-select[aria-pressed="true"] { color: #a8532e; text-decoration: underline; }

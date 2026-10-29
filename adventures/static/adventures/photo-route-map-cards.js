@@ -9,6 +9,22 @@ const colors = Object.fromEntries(
   [...document.querySelectorAll('[data-route-color]')].map(button => [button.dataset.routeFilter, button.dataset.routeColor])
 );
 let map, popup, selected, activeFilter = 'all';
+// Routes you rode as a passenger are dashed; routes you piloted or led stay solid. Dash lengths are in line widths.
+const PASSENGER_LINES = [
+  {mode: 'train', dasharray: [2, 1.5], cap: 'butt'},
+  {mode: 'commercial_flight', dasharray: [0.5, 2.5], cap: 'round'},
+];
+const LINE_STYLES = [
+  {suffix: '', match: ['!', ['in', ['get', 'activity_type'], ['literal', PASSENGER_LINES.map(line => line.mode)]]]},
+  ...PASSENGER_LINES.map(line => ({suffix: `-${line.mode}`, match: ['==', ['get', 'activity_type'], line.mode], dasharray: line.dasharray, cap: line.cap})),
+];
+const withActiveFilter = conditions => activeFilter === 'all' ? ['all', ...conditions] : ['all', ...conditions, ['==', ['get', 'activity_type'], activeFilter]];
+function setLineFilters() {
+  LINE_STYLES.forEach(style => map.setFilter(`route-lines${style.suffix}`, withActiveFilter([style.match])));
+}
+function setSelectedRoute(routeId) {
+  LINE_STYLES.forEach(style => map.setFilter(`selected-route${style.suffix}`, withActiveFilter([style.match, ['==', ['get', 'route_id'], routeId]])));
+}
 let showPhotos = true;
 let activeDeck, activePhotos = [], photoIndex = 0, activeMarker, deckRequest = 0;
 const markers = new Map();
@@ -296,9 +312,7 @@ function selectRoute(route) {
   updateMarkers();
   buttons.forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.selectRoute) === selected)));
   if (!map?.getLayer('route-lines') || !loaded.has(route.id)) return;
-  const selectedFilter = ['all', ['==', ['get', 'route_id'], route.id]];
-  if (activeFilter !== 'all') selectedFilter.push(['==', ['get', 'activity_type'], activeFilter]);
-  map.setFilter('selected-route', selectedFilter);
+  setSelectedRoute(route.id);
   const features = loaded.get(route.id).filter(feature => activeFilter === 'all' || feature.properties.activity_type === activeFilter);
   const bounds = fitFeatures(features, 55, 13, motionDuration());
   if (bounds.isEmpty()) return;
@@ -423,7 +437,7 @@ resetButton.addEventListener('click', () => {
   buttons.forEach(button => button.setAttribute('aria-pressed', 'false'));
   popup?.remove();
   popup = undefined;
-  map.setFilter('selected-route', ['==', ['get', 'route_id'], -1]);
+  setSelectedRoute(-1);
   fitFeatures(allFeatures(), 35, 12, motionDuration());
   if (!map.isMoving()) updateMarkers();
 });
@@ -449,9 +463,9 @@ document.querySelectorAll('[data-route-filter]').forEach(button => button.addEve
     item.hidden = activeFilter !== 'all' && !item.dataset.modes.split(' ').includes(activeFilter);
   });
   if (map?.getLayer('route-lines')) {
-    const filter = activeFilter === 'all' ? null : ['==', ['get', 'activity_type'], activeFilter];
-    ['route-lines', 'route-hit-area'].forEach(layer => map.setFilter(layer, filter));
-    map.setFilter('selected-route', ['==', ['get', 'route_id'], -1]);
+    setLineFilters();
+    map.setFilter('route-hit-area', activeFilter === 'all' ? null : ['==', ['get', 'activity_type'], activeFilter]);
+    setSelectedRoute(-1);
     fitFeatures(allFeatures());
   }
   popup?.remove();
@@ -593,8 +607,13 @@ async function initialize() {
     await new Promise(resolve => map.isStyleLoaded() ? resolve() : map.once('load', resolve));
     map.addSource('routes', {type: 'geojson', data: {type: 'FeatureCollection', features}});
     const filter = activeFilter === 'all' ? undefined : ['==', ['get', 'activity_type'], activeFilter];
-    map.addLayer({id: 'route-lines', type: 'line', source: 'routes', ...(filter ? {filter} : {}), paint: {'line-color': ['get', 'color'], 'line-width': 3, 'line-opacity': 0.85}});
-    map.addLayer({id: 'selected-route', type: 'line', source: 'routes', filter: ['==', ['get', 'route_id'], -1], paint: {'line-color': '#2b241d', 'line-width': 5}});
+    const lineLayer = (id, style, paint) => ({id: `${id}${style.suffix}`, type: 'line', source: 'routes',
+      layout: {'line-cap': style.cap || 'butt', 'line-join': 'round'},
+      paint: {...paint, ...(style.dasharray ? {'line-dasharray': style.dasharray} : {})}});
+    LINE_STYLES.forEach(style => map.addLayer(lineLayer('route-lines', style, {'line-color': ['get', 'color'], 'line-width': 3, 'line-opacity': 0.85})));
+    LINE_STYLES.forEach(style => map.addLayer(lineLayer('selected-route', style, {'line-color': '#2b241d', 'line-width': 5})));
+    setLineFilters();
+    setSelectedRoute(-1);
     map.addLayer({id: 'route-hit-area', type: 'line', source: 'routes', ...(filter ? {filter} : {}), paint: {'line-width': 18, 'line-opacity': 0}});
     waypoints.forEach(stop => {
       const button = document.createElement('button');
