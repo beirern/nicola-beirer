@@ -357,8 +357,17 @@ function popupSpot(route) {
       const rect = part.getBoundingClientRect();
       return {left: rect.left - origin.left - pad, right: rect.right - origin.left + pad, top: rect.top - origin.top - pad, bottom: rect.bottom - origin.top + pad};
     });
+  // Densify each leg so long straight segments with few vertices still count as occupied space.
   const line = (loaded.get(route.id) || []).filter(feature => activeFilter === 'all' || feature.properties.activity_type === activeFilter)
-    .flatMap(feature => feature.geometry.coordinates).map(point => map.project(point));
+    .flatMap(feature => {
+      const projected = feature.geometry.coordinates.map(point => map.project(point));
+      return projected.flatMap((point, index) => {
+        const next = projected[index + 1];
+        if (!next) return [point];
+        const count = Math.max(1, Math.ceil(Math.hypot(next.x - point.x, next.y - point.y) / 12));
+        return Array.from({length: count}, (_, step) => ({x: point.x + (next.x - point.x) * step / count, y: point.y + (next.y - point.y) * step / count}));
+      });
+    });
   if (line.length < 2) return undefined;
   const centre = line.reduce((sum, point) => ({x: sum.x + point.x / line.length, y: sum.y + point.y / line.length}), {x: 0, y: 0});
   const step = Math.max(1, Math.ceil(line.length / 40));
@@ -384,7 +393,23 @@ function popupSpot(route) {
   }
   if (best) break;
   }
-  return best && {anchor: best.anchor, lngLat: map.unproject([best.point.x, best.point.y])};
+  if (best) return {anchor: best.anchor, lngLat: map.unproject([best.point.x, best.point.y])};
+  // No clean spot beside the line: centre the popup where it covers the least route and photo area.
+  const covered = (left, top) => {
+    const right = left + popupW, bottom = top + popupH;
+    const onLine = line.reduce((total, other) => total + (other.x > left && other.x < right && other.y > top && other.y < bottom ? 1 : 0), 0);
+    const onPhotos = boxes.reduce((total, box) => total + Math.max(0, Math.min(right, box.right) - Math.max(left, box.left)) * Math.max(0, Math.min(bottom, box.bottom) - Math.max(top, box.top)) / 100, 0);
+    return onLine * 4 + onPhotos;
+  };
+  let fallback, fallbackCost = Infinity;
+  for (let top = margin; top <= height - margin - popupH; top += 20) {
+    for (let left = margin; left <= width - margin - popupW; left += 20) {
+      if (left + popupW > width - 70 && top < 170) continue;
+      const cost = covered(left, top);
+      if (cost < fallbackCost) { fallbackCost = cost; fallback = {x: left + popupW / 2, y: top + popupH / 2}; }
+    }
+  }
+  return fallback && {anchor: 'center', lngLat: map.unproject([fallback.x, fallback.y])};
 }
 
 buttons.forEach(button => button.addEventListener('click', () => {
