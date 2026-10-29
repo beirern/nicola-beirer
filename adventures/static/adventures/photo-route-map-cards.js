@@ -14,6 +14,7 @@ const PASSENGER_LINES = [
   {mode: 'train', dasharray: [2, 1.5], cap: 'butt'},
   {mode: 'commercial_flight', dasharray: [0.5, 2.5], cap: 'round'},
 ];
+const ROUTE_WIDTH = 3;
 const LINE_STYLES = [
   {suffix: '', match: ['!', ['in', ['get', 'activity_type'], ['literal', PASSENGER_LINES.map(line => line.mode)]]]},
   ...PASSENGER_LINES.map(line => ({suffix: `-${line.mode}`, match: ['==', ['get', 'activity_type'], line.mode], dasharray: line.dasharray, cap: line.cap})),
@@ -607,10 +608,11 @@ async function initialize() {
     await new Promise(resolve => map.isStyleLoaded() ? resolve() : map.once('load', resolve));
     map.addSource('routes', {type: 'geojson', data: {type: 'FeatureCollection', features}});
     const filter = activeFilter === 'all' ? undefined : ['==', ['get', 'activity_type'], activeFilter];
+    // Dash lengths scale with line width, so the wider highlight rescales them to dash exactly over the route line.
     const lineLayer = (id, style, paint) => ({id: `${id}${style.suffix}`, type: 'line', source: 'routes',
       layout: {'line-cap': style.cap || 'butt', 'line-join': 'round'},
-      paint: {...paint, ...(style.dasharray ? {'line-dasharray': style.dasharray} : {})}});
-    LINE_STYLES.forEach(style => map.addLayer(lineLayer('route-lines', style, {'line-color': ['get', 'color'], 'line-width': 3, 'line-opacity': 0.85})));
+      paint: {...paint, ...(style.dasharray ? {'line-dasharray': style.dasharray.map(length => length * ROUTE_WIDTH / paint['line-width'])} : {})}});
+    LINE_STYLES.forEach(style => map.addLayer(lineLayer('route-lines', style, {'line-color': ['get', 'color'], 'line-width': ROUTE_WIDTH, 'line-opacity': 0.85})));
     LINE_STYLES.forEach(style => map.addLayer(lineLayer('selected-route', style, {'line-color': '#2b241d', 'line-width': 5})));
     setLineFilters();
     setSelectedRoute(-1);
