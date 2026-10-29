@@ -579,7 +579,6 @@ async function initialize() {
     map = new maplibregl.Map({
       container,
       center: [0, 25], zoom: 1,
-      scrollZoom: false,
       // Let in-flight tiles finish and keep more of them, so zooming back doesn't redraw blurry placeholders.
       cancelPendingTileRequestsWhileZooming: false,
       maxTileCacheSize: 400,
