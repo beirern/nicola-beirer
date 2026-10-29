@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 from wagtail import urls as wagtail_urls
@@ -11,6 +12,7 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'site/favicon.ico', permanent=True)),
     path('admin/', admin.site.urls),
     path('projects/', include('projects.urls')),
     path('routes/<int:route_id>/geojson/', route_geojson, name='adventure-route-geojson'),

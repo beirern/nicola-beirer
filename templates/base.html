@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Nicola Beirer{% endblock %}</title>
+  {% load static %}
+  <link rel="icon" href="{% static 'site/favicon.svg' %}" type="image/svg+xml">
+  <link rel="icon" href="{% static 'site/favicon.ico' %}" sizes="48x48">
+  <link rel="apple-touch-icon" href="{% static 'site/apple-touch-icon.png' %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,400&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
