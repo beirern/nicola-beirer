@@ -350,7 +350,7 @@ function selectRoute(route) {
     if (selected !== route.id) return;
     popup?.remove();
     const spot = popupSpot(route);
-    popup = new maplibregl.Popup({maxWidth: '300px', anchor: spot?.anchor || 'center', offset: spot ? 16 : 0})
+    popup = new maplibregl.Popup({maxWidth: '260px', anchor: spot?.anchor || 'center', offset: spot ? 10 : 0})
       .setLngLat(spot?.lngLat || bounds.getCenter()).setDOMContent(content).addTo(map);
   };
   if (map.isMoving()) map.once('moveend', show); else show();
@@ -360,7 +360,7 @@ function selectRoute(route) {
 function popupSpot(route) {
   const canvas = map.getCanvas();
   const width = canvas.clientWidth, height = canvas.clientHeight;
-  const popupW = Math.min(300, width - 24), popupH = 190, gap = 20, margin = 8;
+  const popupW = Math.min(260, width - 24), popupH = 170, gap = 14, margin = 8;
   const origin = container.getBoundingClientRect();
   // Measure the drawn cards, badges, and dots (the button box is smaller than a fanned stack).
   const pad = 12;
@@ -384,9 +384,10 @@ function popupSpot(route) {
     });
   if (line.length < 2) return undefined;
   const centre = line.reduce((sum, point) => ({x: sum.x + point.x / line.length, y: sum.y + point.y / line.length}), {x: 0, y: 0});
-  const step = Math.max(1, Math.ceil(line.length / 40));
-  let best, bestScore = -Infinity;
-  for (const minimum of [1, 0]) {
+  const step = Math.max(1, Math.ceil(line.length / 60));
+  // Every candidate touches the route with the popup's pointer; overlaps cost points instead of ruling a spot out,
+  // so the popup always stays attached to the line and settles on the least-covered side.
+  let best, bestCost = Infinity;
   for (let index = 0; index < line.length; index += step) {
     const point = line[index];
     const options = {
@@ -397,33 +398,14 @@ function popupSpot(route) {
       const right = left + popupW, bottom = top + popupH;
       if (left < margin || top < margin || right > width - margin || bottom > height - margin) continue;
       if (right > width - 70 && top < 170) continue;
-      if (line.some(other => other.x > left - 4 && other.x < right + 4 && other.y > top - 4 && other.y < bottom + 4)) continue;
-      const clearance = Math.min(Infinity, ...boxes.map(box =>
-        Math.hypot(Math.max(box.left - right, left - box.right, 0), Math.max(box.top - bottom, top - box.bottom, 0))));
-      if (clearance < minimum) continue;
-      const score = Math.min(clearance, 80) - Math.hypot(point.x - centre.x, point.y - centre.y) / 30;
-      if (score > bestScore) { bestScore = score; best = {anchor, point}; }
+      const onLine = line.reduce((total, other) => total + (other.x > left - 4 && other.x < right + 4 && other.y > top - 4 && other.y < bottom + 4 ? 1 : 0), 0);
+      const onPhotos = boxes.reduce((total, box) =>
+        total + Math.max(0, Math.min(right, box.right) - Math.max(left, box.left)) * Math.max(0, Math.min(bottom, box.bottom) - Math.max(top, box.top)) / 100, 0);
+      const cost = onLine * 4 + onPhotos + Math.hypot(point.x - centre.x, point.y - centre.y) / 30;
+      if (cost < bestCost) { bestCost = cost; best = {anchor, point}; }
     }
   }
-  if (best) break;
-  }
-  if (best) return {anchor: best.anchor, lngLat: map.unproject([best.point.x, best.point.y])};
-  // No clean spot beside the line: centre the popup where it covers the least route and photo area.
-  const covered = (left, top) => {
-    const right = left + popupW, bottom = top + popupH;
-    const onLine = line.reduce((total, other) => total + (other.x > left && other.x < right && other.y > top && other.y < bottom ? 1 : 0), 0);
-    const onPhotos = boxes.reduce((total, box) => total + Math.max(0, Math.min(right, box.right) - Math.max(left, box.left)) * Math.max(0, Math.min(bottom, box.bottom) - Math.max(top, box.top)) / 100, 0);
-    return onLine * 4 + onPhotos;
-  };
-  let fallback, fallbackCost = Infinity;
-  for (let top = margin; top <= height - margin - popupH; top += 20) {
-    for (let left = margin; left <= width - margin - popupW; left += 20) {
-      if (left + popupW > width - 70 && top < 170) continue;
-      const cost = covered(left, top);
-      if (cost < fallbackCost) { fallbackCost = cost; fallback = {x: left + popupW / 2, y: top + popupH / 2}; }
-    }
-  }
-  return fallback && {anchor: 'center', lngLat: map.unproject([fallback.x, fallback.y])};
+  return best && {anchor: best.anchor, lngLat: map.unproject([best.point.x, best.point.y])};
 }
 
 buttons.forEach(button => button.addEventListener('click', () => {
